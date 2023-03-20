@@ -3,3 +3,16 @@
 
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
+.hexlab_root_container {
+  width: 400px;
+  height: 80px;
+  background-color: #aaff00;
+  color: #00bbff;
+}
+
+.hexlab_hexContent {
+  width: 200px;
+  height: 80px;
+  background-color: #00ff00;
+  color: #0000ff;
+}
