@@ -12,6 +12,12 @@ import {
 
 import { Widget } from '@lumino/widgets';
 
+declare global {
+    interface Window {
+        showOpenFilePicker:any;
+    }
+}
+
 class HexEditorWidget extends Widget {
   /**
   * TODO: Add docsxy
@@ -19,7 +25,7 @@ class HexEditorWidget extends Widget {
 
   rootContainer: HTMLElement;
   hexContent: HTMLElement;
-  clearHexButton: HTMLElement;
+  openButton: HTMLElement;
 
   constructor() {
     super();
@@ -28,30 +34,55 @@ class HexEditorWidget extends Widget {
 
     // Build layout elements
     this.rootContainer = document.createElement('div');
-    this.rootContainer.classList.add('hexlab_root_container')
-    console.log('BBB1')
-    console.log(this.rootContainer)
+    this.rootContainer.classList.add('hexlab_root_container');
+    console.log('BBB1');
+    console.log(this.rootContainer);
     this.node.appendChild(this.rootContainer);
 
-    this.hexContent = document.createElement('div');
-    this.hexContent.classList.add('hexlab_hexContent')
-    console.log(this.hexContent)
-    this.hexContent.innerText = 'STARTy3'
-    this.rootContainer.appendChild(this.hexContent)
+    this.openButton = document.createElement('div');
+    this.openButton.classList.add('hexlab_open_button');
+    this.openButton.innerText = 'Load File';
+    this.openButton.addEventListener('click', this.openFile.bind(this), {passive: true});
+    this.rootContainer.appendChild(this.openButton);
 
-    this.clearHexButton = document.createElement('div');
-    this.clearHexButton.classList.add('hexlab_clearHexButton')
-    console.log(this.clearHexButton)
-    this.clearHexButton.innerText = 'CLEAR_btn'
-    this.clearHexButton.addEventListener('click', this.clearHex.bind(this), {passive: true})
-    this.rootContainer.appendChild(this.clearHexButton)
+    this.hexContent = document.createElement('div');
+    this.hexContent.classList.add('hexlab_hex_content');
+    console.log(this.hexContent);
+    this.hexContent.innerText = 'STARTy3';
+    this.rootContainer.appendChild(this.hexContent);
   }
 
-  clearHex() {
-    console.log('AAA2')
-    console.log(this.hexContent)
-    console.log(this.hexContent.classList.contains('hexlab_hexContent'))
-    this.hexContent.innerText = ''
+  async openFile() {
+    console.log('[HexLab] Opening Filxe');
+
+//    let [fileHandle] = await window.showOpenFilePicker();
+//    const fileData = await fileHandle.getFile();
+//    let binRaw = await fileData.arrayBuffer();
+//    let binData = new Uint8Array(binRaw);
+//
+//    let byteItems = [];
+//    let count = 0;
+//    for (const byte of binData) {
+//      console.log('xBYTE');
+//      console.log(byte);
+//      let b = document.createElement('div');
+//      b.classList.add('hexlab_hex_digit');
+//      byteItems.push(b);
+//      let left_hex = 240 & byte >> 4;
+//      let right_hex = 15 & byte;
+//      console.log('LEFT');
+//      console.log(left_hex);
+//      console.log('RIGHT');
+//      console.log(right_hex);
+//      console.log('####');
+//
+//      b.innerText = byte.toString();
+//      count += 1;
+//      if (count > 64) {
+//        break;
+//      }
+//      this.hexContent.appendChild(b);
+//    }
   }
 
   setHex() {
