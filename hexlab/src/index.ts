@@ -24,6 +24,7 @@ class HexEditorWidget extends Widget {
   */
 
   rootContainer: HTMLElement;
+  hexGrid: HTMLElement;
   hexContent: HTMLElement;
   openButton: HTMLElement;
 
@@ -45,44 +46,72 @@ class HexEditorWidget extends Widget {
     this.openButton.addEventListener('click', this.openFile.bind(this), {passive: true});
     this.rootContainer.appendChild(this.openButton);
 
+    this.hexGrid = document.createElement('div');
+    this.hexGrid.classList.add('hexlab_hex_grid');
+    this.rootContainer.appendChild(this.hexGrid);
+
     this.hexContent = document.createElement('div');
     this.hexContent.classList.add('hexlab_hex_content');
+    this.hexContent.classList.add('--jp-code-font-family');
+    this.hexContent.classList.add('--jp-code-font-size');
     console.log(this.hexContent);
-    this.hexContent.innerText = 'STARTy3';
-    this.rootContainer.appendChild(this.hexContent);
+    this.hexGrid.appendChild(this.hexContent);
   }
 
   async openFile() {
-    console.log('[HexLab] Opening Filxe');
+    console.log('[HexLab] Opening File');
 
-//    let [fileHandle] = await window.showOpenFilePicker();
-//    const fileData = await fileHandle.getFile();
-//    let binRaw = await fileData.arrayBuffer();
-//    let binData = new Uint8Array(binRaw);
-//
-//    let byteItems = [];
-//    let count = 0;
-//    for (const byte of binData) {
-//      console.log('xBYTE');
-//      console.log(byte);
-//      let b = document.createElement('div');
-//      b.classList.add('hexlab_hex_digit');
-//      byteItems.push(b);
-//      let left_hex = 240 & byte >> 4;
-//      let right_hex = 15 & byte;
-//      console.log('LEFT');
-//      console.log(left_hex);
-//      console.log('RIGHT');
-//      console.log(right_hex);
-//      console.log('####');
-//
-//      b.innerText = byte.toString();
-//      count += 1;
-//      if (count > 64) {
-//        break;
-//      }
-//      this.hexContent.appendChild(b);
-//    }
+    this.hexContent.innerText = '';
+
+    let [fileHandle] = await window.showOpenFilePicker();
+    const fileData = await fileHandle.getFile();
+    let binRaw = await fileData.arrayBuffer();
+    let binData = new Uint8Array(binRaw);
+
+    let byteItems = [];
+    let count = 0;
+    for (const byte of binData) {
+      console.log('BYTE');
+      console.log(byte);
+      let b = document.createElement('span');
+      b.setAttribute('display', 'inline');
+      b.classList.add('hexlab_hex_byte');
+      byteItems.push(b);
+      let left_hex = byte >> 4;
+      let right_hex = 15 & byte;
+      console.log('LEFT');
+      console.log(left_hex);
+      console.log('RIGHT');
+      console.log(right_hex);
+      console.log('####');
+      let charmap: any = {
+        0: '0',
+        1: '1',
+        2: '2',
+        3: '3',
+        4: '4',
+        5: '5',
+        6: '6',
+        7: '7',
+        8: '8',
+        9: '9',
+        10: 'a',
+        11: 'b',
+        12: 'c',
+        13: 'd',
+        14: 'e',
+        15: 'f',
+      };
+
+      let hex_value = charmap[left_hex].toString() + charmap[right_hex].toString()
+
+      b.innerText = hex_value;
+      count += 1;
+      if (count > 2048) {
+        break;
+      }
+      this.hexContent.appendChild(b);
+    }
   }
 
   setHex() {

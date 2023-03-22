@@ -11,14 +11,23 @@
   padding: 0;
 }
 
-.hexlab_hex_content {
+.hexlab_hex_grid {
   width: 70%;
   height: 100%;
   background-color: #424242;
   color: #616161;
   border-radius: 2px;
-  margin: 8px 0px 8px 8px;
-  display: flex;
+  margin: 8px;
+  flex-flow: row wrap;
+}
+
+.hexlab_hex_content {
+  width: 95%;
+  color: #616161;
+  border-radius: 2px;
+  margin: 8px;
+  display: inline-flex;
+  flex-flow: row wrap;
 }
 
 .hexlab_open_button {
@@ -33,12 +42,13 @@
   color: #212121;
 }
 
-.hexlab_hex_digit {
-  height: 14px;
-  width: 14px;
+.hexlab_hex_byte {
+  height: 20px;
+  width: 20px;
+  margin: 2px;
   text-align: center;
   vertical-align: middle;
   border-radius: 2px;
-  background-color: #777777;
-  color: #444444;
+  background-color: #212121;
+  color: #e6e6e6;
 }
