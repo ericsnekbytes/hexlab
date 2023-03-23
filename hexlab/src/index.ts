@@ -96,6 +96,9 @@ class HexEditorWidget extends Widget {
       this.currentBlobData = binData;
       this.currentFileSize = fileData.size;
 
+      console.log('[Hexlab] Filename: ' + this.currentFilename);
+      console.log('[Hexlab] File Size: ' + this.currentFileSize);
+
       console.log('[Hexlab] File opened successfully');
     } catch (err) {
       if (err.code && err.code == DOMException.ABORT_ERR) {
@@ -114,6 +117,8 @@ class HexEditorWidget extends Widget {
   }
 
   handleScrollEvent(event: any) {
+    console.log('[Hexlab] WHEEL EVENT')
+    console.log(event)
     let minDelta = this.getMaxCellCount();
 
     if (event.deltaY < 0) {
@@ -122,13 +127,15 @@ class HexEditorWidget extends Widget {
       let lastScrollPosition = this.currentFileSize - (this.currentFileSize % minDelta)
       this.currentPosition = Math.min(lastScrollPosition, this.currentPosition + minDelta);
     }
+
+    this.configureAndFillGrid();
   }
 
   getMaxCellCount() {
     // Determines how many cells can fit in the hex area width
     let gridWidth = this.hexGridArea.offsetWidth;
 
-    let CELL_WIDTH =  20;
+    let CELL_WIDTH =  20;  // TODO refactor these values
     let CELL_MARGIN = 4;
     return Math.floor(
       ((gridWidth - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
@@ -150,10 +157,14 @@ class HexEditorWidget extends Widget {
   }
 
   configureAndFillGrid() {
+    console.log('[Hexlab] FILL GRID');
     this.hexContent.innerText = '';  // Empty the element
 
     let maxCellCount = this.getMaxCellCount();
-    let rowCount = this.getMaxRowCount();
+    let rowCount = this.getMaxRowCount();  // TODO rename
+    console.log('[Hexlab] Cell count: ' + maxCellCount);
+    console.log('[Hexlab] Row count: ' + rowCount);
+    console.log('[Hexlab] Position: ' + this.currentPosition);
 
     // Build hex layout/dom structure
     let rowItems = []
@@ -166,12 +177,14 @@ class HexEditorWidget extends Widget {
 
       // Make hex cells (holds 1 byte of our bin data)
       let cellCountThisRow = (this.currentPosition + maxCellCount) >= this.currentFileSize ? this.currentFileSize % maxCellCount : maxCellCount;
+      console.log('[Hexlab] Calculated cell count: ' + cellCountThisRow);
       for (let i = 0; i < cellCountThisRow; i++) {
         let hexCell = document.createElement('div');
         hexCell.classList.add('hexlab_hex_byte');
         hexRowContainer.appendChild(hexCell);
       }
     }
+    console.log('[Hexlab] Actual rows: ' + rowItems.length);
 
     for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
       let hexRow = rowItems[rowIndex];
@@ -203,6 +216,7 @@ class HexEditorWidget extends Widget {
           14: 'e',
           15: 'f',
         };
+        console.log('[Hexlab] Write: ' + charmap[left_hex] + charmap[right_hex]);
 
         cell.innerText = charmap[left_hex] + charmap[right_hex];
       }
@@ -214,7 +228,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('JupyterLab extension hexlab is activated!');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!yy5');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;

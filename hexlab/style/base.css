@@ -26,8 +26,6 @@
   color: #616161;
   border-radius: 2px;
   margin: 8px;
-  display: inline-flex;
-  flex-flow: row wrap;
 }
 
 .hexlab_open_button {
@@ -42,18 +40,19 @@
   color: #212121;
 }
 
+.hexlab_row_container {
+  height: 20px;
+  margin: 4px;
+}
+
 .hexlab_hex_byte {
   height: 20px;
   width: 20px;
-  margin: 2px;
+  margin: 4px;
+  display: inline-block;
   text-align: center;
   vertical-align: middle;
   border-radius: 2px;
   background-color: #212121;
   color: #e6e6e6;
-}
-
-.hexlab_row_container {
-  background-color: #ff0000;
-  height: 20px;
 }
