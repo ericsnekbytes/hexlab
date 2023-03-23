@@ -12,12 +12,6 @@ import {
 
 import { Widget } from '@lumino/widgets';
 
-declare global {
-    interface Window {
-        showOpenFilePicker:any;
-    }
-}
-
 class HexEditorWidget extends Widget {
   /**
   * TODO: Add docsxy
@@ -26,7 +20,8 @@ class HexEditorWidget extends Widget {
   rootContainer: HTMLElement;
   hexGridArea: HTMLElement;
   hexContent: HTMLElement;
-  openButton: HTMLElement;
+  openButton: any;
+  openInputHidden: any;
 
   currentBlobData: Uint8Array | null;
   currentFilename: string | null;
@@ -54,9 +49,14 @@ class HexEditorWidget extends Widget {
 
     // Set up some controls at the top of the layout
     this.openButton = document.createElement('div');
+    this.openInputHidden = document.createElement('input');
+    this.openInputHidden.setAttribute('type', 'file');
+    this.openButton.appendChild(this.openInputHidden);
+    this.openButton.classList.add('hexlab_input_style');
     this.openButton.classList.add('hexlab_open_button');
     this.openButton.innerText = 'Load File';
-    this.openButton.addEventListener('click', this.openFile.bind(this), {passive: true});
+    this.openButton.addEventListener('click', this.triggerFileDialog.bind(this), {passive: true});
+    this.openInputHidden.addEventListener('input' , this.openFile.bind(this), {passive: true});
     this.rootContainer.appendChild(this.openButton);
 
     // Define a container for the hex area
@@ -73,11 +73,19 @@ class HexEditorWidget extends Widget {
     this.hexGridArea.appendChild(this.hexContent);
 
     this.configureAndFillGrid();
-    this.node.addEventListener('wheel', this.configureAndFillGrid.bind(this));
+    this.node.addEventListener('wheel', this.handleScrollEvent.bind(this));
+  }
+
+  triggerFileDialog() {
+    this.openInputHidden.click();
   }
 
   async openFile() {
     console.log('[HexLab] Opening File');
+
+    console.log('INPUTELEM');
+    console.log(this.openInputHidden);
+    this.openInputHidden.click();
 
     // Clear/empty current hex grid
     this.hexContent.innerText = '';
@@ -86,13 +94,16 @@ class HexEditorWidget extends Widget {
     this.currentFilename = null;
     this.currentFileSize = -1;
     try {
-      let [fileHandle] = await window.showOpenFilePicker();
-      const fileData = await fileHandle.getFile();
+//      let [fileHandle] = await window.showOpenFilePicker();
+//      const fileData = await fileHandle.getFile();
+      console.log('FILELIST');
+      console.log(this.openInputHidden.files);
+      const fileData = this.openInputHidden.files[0];
       let binRaw = await fileData.arrayBuffer();
       let binData = new Uint8Array(binRaw);
 
       // Populate binary data members for this file
-      this.currentFilename = fileHandle.name;
+      this.currentFilename = fileData.name;
       this.currentBlobData = binData;
       this.currentFileSize = fileData.size;
 
@@ -101,11 +112,7 @@ class HexEditorWidget extends Widget {
 
       console.log('[Hexlab] File opened successfully');
     } catch (err) {
-      if (err.code && err.code == DOMException.ABORT_ERR) {
-        console.log('[Hexlab] File open was aborted');
-      } else {
-        console.log('[Hexlab] Error opening file');
-      }
+      console.log('[Hexlab] Error opening file');
     } finally {
       if (this.currentFilename == null) {
         console.log('[Hexlab] File open failed');
@@ -122,7 +129,7 @@ class HexEditorWidget extends Widget {
     let minDelta = this.getMaxCellCount();
 
     if (event.deltaY < 0) {
-      this.currentPosition -= Math.max(0, this.currentPosition - minDelta);
+      this.currentPosition = Math.max(0, this.currentPosition - minDelta);
     } else {
       let lastScrollPosition = this.currentFileSize - (this.currentFileSize % minDelta)
       this.currentPosition = Math.min(lastScrollPosition, this.currentPosition + minDelta);
@@ -133,7 +140,10 @@ class HexEditorWidget extends Widget {
 
   getMaxCellCount() {
     // Determines how many cells can fit in the hex area width
-    let gridWidth = this.hexGridArea.offsetWidth;
+    let gridWidthRaw: string = window.getComputedStyle(this.hexGridArea).getPropertyValue('width');
+    gridWidthRaw.replace('p', '');
+    gridWidthRaw.replace('x', '');
+    let gridWidth: number = parseInt(gridWidthRaw);
 
     let CELL_WIDTH =  20;  // TODO refactor these values
     let CELL_MARGIN = 4;
@@ -144,7 +154,10 @@ class HexEditorWidget extends Widget {
 
   getMaxRowCount() {
     // Determines how many rows can fit in the hex area height
-    let gridHeight = this.hexGridArea.offsetHeight;
+    let gridHeightRaw: string = window.getComputedStyle(this.hexGridArea).getPropertyValue('height');
+    gridHeightRaw.replace('p', '');
+    gridHeightRaw.replace('x', '');
+    let gridHeight: number = parseInt(gridHeightRaw);
 
     let CELL_WIDTH =  20;
     let CELL_MARGIN = 4;
@@ -192,7 +205,7 @@ class HexEditorWidget extends Widget {
       for (let cellIndex = 0; cellIndex < hexRow.children.length; cellIndex++) {  // TODO does a whitespace node show up here?
         let cell: any = hexRow.children[cellIndex];
 
-        let byteIndex = maxCellCount * rowIndex + cellIndex;
+        let byteIndex = this.currentPosition + (maxCellCount * rowIndex) + cellIndex;
         let currentByte = this.currentBlobData![byteIndex];
 
         let left_hex = currentByte >> 4;
@@ -216,7 +229,10 @@ class HexEditorWidget extends Widget {
           14: 'e',
           15: 'f',
         };
-        console.log('[Hexlab] Write: ' + charmap[left_hex] + charmap[right_hex]);
+//        console.log('[Hexlab] Write: ' + charmap[left_hex] + charmap[right_hex]);
+        if (cellIndex == 0 && rowIndex == 0) {
+          console.log('[Hexlab] First Byte: ' + charmap[left_hex] + charmap[right_hex]);
+        }
 
         cell.innerText = charmap[left_hex] + charmap[right_hex];
       }

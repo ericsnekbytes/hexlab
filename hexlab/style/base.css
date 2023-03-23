@@ -38,6 +38,7 @@
   border-radius: 2px;
   background-color: #2296f3;
   color: #212121;
+  border: 0;
 }
 
 .hexlab_row_container {
@@ -56,3 +57,8 @@
   background-color: #212121;
   color: #e6e6e6;
 }
+
+.hexlab_root_container > input {
+  display: none;
+}
+
