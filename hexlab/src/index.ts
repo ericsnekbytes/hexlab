@@ -30,6 +30,8 @@ class HexEditorWidget extends Widget {
 
   currentBlobData: Uint8Array | null;
   currentFilename: string | null;
+  currentFileSize: number;
+  currentPosition: number;
 
   constructor() {
     super();
@@ -37,6 +39,8 @@ class HexEditorWidget extends Widget {
     // Initialize data members
     this.currentFilename = null;
     this.currentBlobData = null;
+    this.currentFileSize = 0;
+    this.currentPosition = 0;
 
     // Add styling and build layout tree
     this.addClass('hexlab_root_widget');
@@ -77,6 +81,7 @@ class HexEditorWidget extends Widget {
 
     // Clear stored filename and attempt to re-populate
     this.currentFilename = null;
+    this.currentFileSize = -1;
     try {
       let [fileHandle] = await window.showOpenFilePicker();
       const fileData = await fileHandle.getFile();
@@ -86,6 +91,7 @@ class HexEditorWidget extends Widget {
       // Populate binary data members for this file
       this.currentFilename = fileHandle.name;
       this.currentBlobData = binData;
+      this.currentFileSize = fileData.size;
 
       console.log('[Hexlab] File opened successfully');
     } catch (err) {
@@ -150,12 +156,86 @@ class HexEditorWidget extends Widget {
     }
   }
 
-  configureGrid() {
-    () => {};
+  handleScrollEvent(event: any) {
+    let minDelta = this.getMaxCellCount();
+
+    if (event.deltaY < 0) {
+
+    } else {
+      this.currentPosition = Math.max(0, this.currentPosition - 1);
+      this.currentPosition
+    }
+
   }
 
-  setHex() {
-    this.hexContent.innerText = 'ABCdef!'
+  getMaxCellCount() {
+    // Determines how many cells can fit in the hex area width
+    let gridWidth = this.hexGridArea.offsetWidth;
+
+    let CELL_WIDTH =  20;
+    let CELL_MARGIN = 4;
+    return Math.floor(
+      ((gridWidth - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
+    )
+  }
+
+  configureAndFillGrid() {
+    this.hexContent.innerText = '';  // Empty the element
+
+    let maxCellCount = this.getMaxCellCount();
+
+    // Build hex layout/dom structure
+    let rowItems = []
+    for (let i = 0; i < Math.max(rowCount, 1); i++) {
+      // Make a row container that holds the bytes for that row
+      let hexRowContainer = document.createElement('div');
+      hexRowContainer.classList.add('hexlab_row_container');
+      this.hexContent.appendChild(hexRowContainer);
+      rowItems.push(hexRowContainer);
+
+      // Make hex cells (holds 1 byte of our bin data)
+      let cellCountThisRow = (this.currentPosition + maxCellCount) >= this.currentFileSize ? this.currentFileSize % maxCellCount : maxCellCount;
+      for (let i = 0; i < cellCountThisRow; i++) {
+        let hexCell = document.createElement('div');
+        hexCell.classList.add('hexlab_hex_byte');
+        hexRowContainer.appendChild(hexCell);
+      }
+    }
+
+    for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
+      let hexRow = rowItems[rowIndex];
+
+      for (let cellIndex = 0; cellIndex < hexRow.children.length; cellIndex++) {  // TODO does a whitespace node show up here?
+        let cell: any = hexRow.children[cellIndex];
+
+        let byteIndex = maxCellCount * rowIndex + cellIndex;
+        let currentByte = this.currentBlobData![byteIndex];
+
+        let left_hex = currentByte >> 4;
+        let right_hex = 15 & currentByte;
+
+        let charmap: any = {  // TODO any
+          0: '0',
+          1: '1',
+          2: '2',
+          3: '3',
+          4: '4',
+          5: '5',
+          6: '6',
+          7: '7',
+          8: '8',
+          9: '9',
+          10: 'a',
+          11: 'b',
+          12: 'c',
+          13: 'd',
+          14: 'e',
+          15: 'f',
+        };
+
+        cell.innerText = charmap[left_hex] + charmap[right_hex];
+      }
+    }
   }
 }
 
