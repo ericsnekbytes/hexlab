@@ -24,53 +24,87 @@ class HexEditorWidget extends Widget {
   */
 
   rootContainer: HTMLElement;
-  hexGrid: HTMLElement;
+  hexGridArea: HTMLElement;
   hexContent: HTMLElement;
   openButton: HTMLElement;
+
+  currentBlobData: Uint8Array | null;
+  currentFilename: string | null;
 
   constructor() {
     super();
 
+    // Initialize data members
+    this.currentFilename = null;
+    this.currentBlobData = null;
+
+    // Add styling and build layout tree
     this.addClass('hexlab_root_widget');
 
-    // Build layout elements
+    // Build layout subtree
+    // ....................
+    // Add a root element into the jupyter-widget (full hex UI fits in here)
     this.rootContainer = document.createElement('div');
     this.rootContainer.classList.add('hexlab_root_container');
-    console.log('BBB1');
-    console.log(this.rootContainer);
     this.node.appendChild(this.rootContainer);
 
+    // Set up some controls at the top of the layout
     this.openButton = document.createElement('div');
     this.openButton.classList.add('hexlab_open_button');
     this.openButton.innerText = 'Load File';
     this.openButton.addEventListener('click', this.openFile.bind(this), {passive: true});
     this.rootContainer.appendChild(this.openButton);
 
-    this.hexGrid = document.createElement('div');
-    this.hexGrid.classList.add('hexlab_hex_grid');
-    this.rootContainer.appendChild(this.hexGrid);
+    // Define a container for the hex area
+    this.hexGridArea = document.createElement('div');
+    this.hexGridArea.classList.add('hexlab_hex_grid_area');
+    this.rootContainer.appendChild(this.hexGridArea);
 
+    // Define a grid with slots to hold byte content
     this.hexContent = document.createElement('div');
     this.hexContent.classList.add('hexlab_hex_content');
     this.hexContent.classList.add('--jp-code-font-family');
     this.hexContent.classList.add('--jp-code-font-size');
     console.log(this.hexContent);
-    this.hexGrid.appendChild(this.hexContent);
+    this.hexGridArea.appendChild(this.hexContent);
   }
 
   async openFile() {
     console.log('[HexLab] Opening File');
 
+    // Clear/empty current hex grid
     this.hexContent.innerText = '';
 
-    let [fileHandle] = await window.showOpenFilePicker();
-    const fileData = await fileHandle.getFile();
-    let binRaw = await fileData.arrayBuffer();
-    let binData = new Uint8Array(binRaw);
+    // Clear stored filename and attempt to re-populate
+    this.currentFilename = null;
+    try {
+      let [fileHandle] = await window.showOpenFilePicker();
+      const fileData = await fileHandle.getFile();
+      let binRaw = await fileData.arrayBuffer();
+      let binData = new Uint8Array(binRaw);
 
+      // Populate binary data members for this file
+      this.currentFilename = fileHandle.name;
+      this.currentBlobData = binData;
+
+      console.log('[Hexlab] File opened successfully');
+    } catch (err) {
+      if (err.code && err.code == DOMException.ABORT_ERR) {
+        console.log('[Hexlab] File open was aborted');
+      } else {
+        console.log('[Hexlab] Error opening file');
+      }
+    } finally {
+      if (this.currentFilename == null) {
+        console.log('[Hexlab] File open failed');
+        return;
+      }
+    }
+
+    // Get/populate hex representations for bin data
     let byteItems = [];
     let count = 0;
-    for (const byte of binData) {
+    for (const byte of this.currentBlobData!) {
       console.log('BYTE');
       console.log(byte);
       let b = document.createElement('span');
@@ -103,8 +137,10 @@ class HexEditorWidget extends Widget {
         15: 'f',
       };
 
+      // Combine hex digits into a byte
       let hex_value = charmap[left_hex].toString() + charmap[right_hex].toString()
 
+      // Populate the byte element and add it to the layout
       b.innerText = hex_value;
       count += 1;
       if (count > 2048) {
@@ -112,6 +148,10 @@ class HexEditorWidget extends Widget {
       }
       this.hexContent.appendChild(b);
     }
+  }
+
+  configureGrid() {
+    () => {};
   }
 
   setHex() {
