@@ -71,6 +71,9 @@ class HexEditorWidget extends Widget {
     this.hexContent.classList.add('--jp-code-font-size');
     console.log(this.hexContent);
     this.hexGridArea.appendChild(this.hexContent);
+
+    this.configureAndFillGrid();
+    this.node.addEventListener('wheel', this.configureAndFillGrid.bind(this));
   }
 
   async openFile() {
@@ -107,65 +110,18 @@ class HexEditorWidget extends Widget {
       }
     }
 
-    // Get/populate hex representations for bin data
-    let byteItems = [];
-    let count = 0;
-    for (const byte of this.currentBlobData!) {
-      console.log('BYTE');
-      console.log(byte);
-      let b = document.createElement('span');
-      b.setAttribute('display', 'inline');
-      b.classList.add('hexlab_hex_byte');
-      byteItems.push(b);
-      let left_hex = byte >> 4;
-      let right_hex = 15 & byte;
-      console.log('LEFT');
-      console.log(left_hex);
-      console.log('RIGHT');
-      console.log(right_hex);
-      console.log('####');
-      let charmap: any = {
-        0: '0',
-        1: '1',
-        2: '2',
-        3: '3',
-        4: '4',
-        5: '5',
-        6: '6',
-        7: '7',
-        8: '8',
-        9: '9',
-        10: 'a',
-        11: 'b',
-        12: 'c',
-        13: 'd',
-        14: 'e',
-        15: 'f',
-      };
-
-      // Combine hex digits into a byte
-      let hex_value = charmap[left_hex].toString() + charmap[right_hex].toString()
-
-      // Populate the byte element and add it to the layout
-      b.innerText = hex_value;
-      count += 1;
-      if (count > 2048) {
-        break;
-      }
-      this.hexContent.appendChild(b);
-    }
+    this.configureAndFillGrid();
   }
 
   handleScrollEvent(event: any) {
     let minDelta = this.getMaxCellCount();
 
     if (event.deltaY < 0) {
-
+      this.currentPosition -= Math.max(0, this.currentPosition - minDelta);
     } else {
-      this.currentPosition = Math.max(0, this.currentPosition - 1);
-      this.currentPosition
+      let lastScrollPosition = this.currentFileSize - (this.currentFileSize % minDelta)
+      this.currentPosition = Math.min(lastScrollPosition, this.currentPosition + minDelta);
     }
-
   }
 
   getMaxCellCount() {
@@ -179,10 +135,25 @@ class HexEditorWidget extends Widget {
     )
   }
 
+  getMaxRowCount() {
+    // Determines how many rows can fit in the hex area height
+    let gridHeight = this.hexGridArea.offsetHeight;
+
+    let CELL_WIDTH =  20;
+    let CELL_MARGIN = 4;
+    return Math.max(
+      1,
+      Math.floor(
+        ((gridHeight - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
+      )
+    )
+  }
+
   configureAndFillGrid() {
     this.hexContent.innerText = '';  // Empty the element
 
     let maxCellCount = this.getMaxCellCount();
+    let rowCount = this.getMaxRowCount();
 
     // Build hex layout/dom structure
     let rowItems = []
