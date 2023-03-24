@@ -30,14 +30,15 @@ class HexEditorWidget extends Widget {
   * TODO: Add docsxy
   */
 
-  rootContainer: HTMLElement;
-  hexGridArea: HTMLElement;
-  scrollbar: any;
-  hexContent: HTMLElement;
+  mainArea: HTMLElement;
+  workspace: HTMLElement;
   topArea: HTMLElement;
-  fileLabel: any;
   openButton: any;
   openInputHidden: any;
+  fileLabel: any;
+  hexGrid: HTMLElement;
+  scrollbar: any;
+
   gridResizeChecker: any;
 
   currentBlobData: Uint8Array | null;
@@ -55,20 +56,21 @@ class HexEditorWidget extends Widget {
     this.currentPosition = 0;
 
     // Add styling and build layout tree
-    this.addClass('hexlab_root_widget');
+
+    this.node.classList.add('hexlab_root_widget');
 
     // Build layout subtree
     // ....................
     // Add a root element into the jupyter-widget (full hex UI fits in here)
-    this.rootContainer = document.createElement('div');
-    this.rootContainer.classList.add('hexlab_root_container');
-    this.node.appendChild(this.rootContainer);
+    this.mainArea = document.createElement('div');
+    this.mainArea.classList.add('hexlab_main_area');
+    this.node.appendChild(this.mainArea);
 
     let topArea = document.createElement('div');
     topArea.classList.add('--jp-code-font-family');
     topArea.classList.add('--jp-code-font-size');
     topArea.classList.add('hexlab_top_area');
-    this.rootContainer.appendChild(topArea);
+    this.mainArea.appendChild(topArea);
     this.topArea = topArea;
 
     // Set up some controls at the top of the layout
@@ -86,15 +88,17 @@ class HexEditorWidget extends Widget {
     let fileLabel = document.createElement('div');
     fileLabel.classList.add('hexlab_file_label');
     topArea.appendChild(fileLabel);
+    fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
     this.fileLabel = fileLabel;
 
     // Define a container for the hex area
-    this.hexGridArea = document.createElement('div');
-    this.hexGridArea.classList.add('hexlab_hex_grid_area');
-    this.gridResizeChecker = new ResizeObserver(this.foobarwik.bind(this));
-    this.gridResizeChecker.observe(this.hexGridArea);
-    this.rootContainer.appendChild(this.hexGridArea);
+    this.workspace = document.createElement('div');
+    this.workspace.classList.add('hexlab_workspace');
+    this.gridResizeChecker = new ResizeObserver(this.configureAndFillGrid.bind(this));
+    this.gridResizeChecker.observe(this.workspace);
+    this.mainArea.appendChild(this.workspace);
 
+    // TODO Finish this
     // Data scrolling is handled manually via this scrollbar
     // (this is not true scrolling of a long element with overflow,
     // it only tracks the position in the hex data and uses the
@@ -105,13 +109,13 @@ class HexEditorWidget extends Widget {
     this.scrollbar = getScrollbar();
 
     // Define a grid with slots to hold byte content
-    this.hexContent = document.createElement('div');
-    this.hexContent.classList.add('hexlab_hex_content');
-    this.hexContent.classList.add('--jp-code-font-family');
-    this.hexContent.classList.add('--jp-code-font-size');
-    console.log(this.hexContent);
-    this.hexGridArea.appendChild(this.hexContent);
-    this.hexGridArea.appendChild(this.scrollbar);
+    this.hexGrid = document.createElement('div');
+    this.hexGrid.classList.add('hexlab_hex_grid');
+    this.hexGrid.classList.add('--jp-code-font-family');
+    this.hexGrid.classList.add('--jp-code-font-size');
+    console.log(this.hexGrid);
+    this.workspace.appendChild(this.hexGrid);
+    this.workspace.appendChild(this.scrollbar);
 
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleScrollEvent.bind(this));
@@ -119,10 +123,6 @@ class HexEditorWidget extends Widget {
 
   triggerFileDialog() {
     this.openInputHidden.click();
-  }
-
-  foobarwik(thing: any, thing2: any) {
-    this.configureAndFillGrid();
   }
 
   async openFile() {
@@ -133,16 +133,14 @@ class HexEditorWidget extends Widget {
     this.openInputHidden.click();
 
     // Clear/empty current hex grid
-    this.hexContent.innerText = '';
+    this.hexGrid.innerText = '';
 
     // Clear stored file metadata and attempt to re-populate
     this.currentFilename = null;
     this.currentFileSize = 0;
     this.currentPosition = 0;
-    this.fileLabel.innerText = '';
+    this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
     try {
-//      let [fileHandle] = await window.showOpenFilePicker();
-//      const fileData = await fileHandle.getFile();
       console.log('FILELIST');
       console.log(this.openInputHidden.files);
       const fileData = this.openInputHidden.files[0];
@@ -194,7 +192,7 @@ class HexEditorWidget extends Widget {
     let CELLROWMARGIN = 8;
 
     // Determines how many cells can fit in the hex area width
-    let gridWidthRaw: string = window.getComputedStyle(this.hexGridArea).getPropertyValue('width');
+    let gridWidthRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('width');
     gridWidthRaw.replace('p', '');
     gridWidthRaw.replace('x', '');
     let gridWidth: number = parseInt(gridWidthRaw) - (2 * CELLROWMARGIN);
@@ -210,7 +208,7 @@ class HexEditorWidget extends Widget {
     let CELLROWMARGIN = 8;
 
     // Determines how many rows can fit in the hex area height
-    let gridHeightRaw: string = window.getComputedStyle(this.hexGridArea).getPropertyValue('height');
+    let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
     gridHeightRaw.replace('p', '');
     gridHeightRaw.replace('x', '');
     let gridHeight: number = parseInt(gridHeightRaw) - (2 * CELLROWMARGIN);
@@ -228,7 +226,7 @@ class HexEditorWidget extends Widget {
   fillGrid() {
     let maxCellCount = Math.max(this.getMaxCellCount(), 1);
 
-    let rowItems = this.hexContent.children;
+    let rowItems = this.hexGrid.children;
     for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
       let hexRow = rowItems[rowIndex];
 
@@ -276,9 +274,9 @@ class HexEditorWidget extends Widget {
 
     console.log('[Hexlab] FILL GRID');
 
-    this.hexContent.innerText = '';  // Empty the element
-    while (this.hexContent.firstChild != null) {
-      this.hexContent.removeChild(this.hexContent.lastChild!);
+    this.hexGrid.innerText = '';  // Empty the element
+    while (this.hexGrid.firstChild != null) {
+      this.hexGrid.removeChild(this.hexGrid.lastChild!);
     }
 
     let maxCellCount = Math.max(this.getMaxCellCount(), 1);
@@ -296,10 +294,10 @@ class HexEditorWidget extends Widget {
     let rowItems = []
     for (let rowIndex = 0; rowIndex < rowCountForCurrentPosition; rowIndex++) {
       // Make a row container that holds the bytes for that row
-      let hexRowContainer = document.createElement('div');
-      hexRowContainer.classList.add('hexlab_row_container');
-      this.hexContent.appendChild(hexRowContainer);
-      rowItems.push(hexRowContainer);
+      let hexRow = document.createElement('div');
+      hexRow.classList.add('hexlab_hex_row');
+      this.hexGrid.appendChild(hexRow);
+      rowItems.push(hexRow);
 
       // Make hex cells (holds 1 byte of our bin data)
       let previous_row_count_plus_new_row = rowIndex + 1;
@@ -311,9 +309,10 @@ class HexEditorWidget extends Widget {
         let hexCell: any = document.createElement('div');
         if (j == cellCountThisRow - 1) {
           hexCell.style['background-color'] = 'red';
+          hexCell.style['margin-right'] = '0px';
         }
         hexCell.classList.add('hexlab_hex_byte');
-        hexRowContainer.appendChild(hexCell);
+        hexRow.appendChild(hexCell);
       }
     }
     console.log('[Hexlab] Actual rows: ' + rowItems.length);
@@ -331,7 +330,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!yy7');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!yy9');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;
