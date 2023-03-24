@@ -111,6 +111,7 @@ class HexEditorWidget extends Widget {
     this.hexContent.classList.add('--jp-code-font-size');
     console.log(this.hexContent);
     this.hexGridArea.appendChild(this.hexContent);
+    this.hexGridArea.appendChild(this.scrollbar);
 
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleScrollEvent.bind(this));
@@ -271,7 +272,8 @@ class HexEditorWidget extends Widget {
     }
   }
 
-  configureAndFillGrid() {
+  configureGrid() {
+
     console.log('[Hexlab] FILL GRID');
 
     this.hexContent.innerText = '';  // Empty the element
@@ -316,6 +318,11 @@ class HexEditorWidget extends Widget {
     }
     console.log('[Hexlab] Actual rows: ' + rowItems.length);
 
+    this.fillGrid();
+  }
+
+  configureAndFillGrid() {
+    this.configureGrid();
     this.fillGrid();
   }
 }
