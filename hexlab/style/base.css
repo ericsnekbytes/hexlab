@@ -106,7 +106,9 @@
 .hexlab_scroll_grip {
   width: 8px;
   height: 8px;
-  margin: 2px;
   border-radius: 8px;
   background-color: #22ff22;
+  position: relative;
+  top: 2px;
+  left: 2px;
 }

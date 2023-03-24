@@ -181,6 +181,23 @@ class HexEditorWidget extends Widget {
     // Handles subsequent mouse events until a mouseup
     if (event.type == 'mousemove') {
       console.log('[Hexlab] Move')
+
+      console.log('FOOBAR');
+      let gripRect = this.scrollGrip.getBoundingClientRect();
+      console.log(typeof gripRect.top);
+      let pageY = event.pageY;
+      let gripTop = parseInt(gripRect.top);
+      let scrollbarHeight = parseInt(window.getComputedStyle(this.scrollbar).getPropertyValue('height'));
+      console.log(scrollbarHeight);
+
+      console.log(parseInt(event.pageY));
+      console.log(this.scrollGrip.getBoundingClientRect().top);
+
+      let newGripPosition = ((pageY - gripTop)).toString() + 'px';
+      console.log('NEWGRIP');
+      console.log(newGripPosition);
+
+      this.scrollGrip.style.top = newGripPosition;
     }
     if (event.type == 'mouseup') {
       console.log('[Hexlab] UP/DISCONNECT')
