@@ -56,7 +56,6 @@ class HexEditorWidget extends Widget {
     this.currentPosition = 0;
 
     // Add styling and build layout tree
-
     this.node.classList.add('hexlab_root_widget');
 
     // Build layout subtree
@@ -66,6 +65,7 @@ class HexEditorWidget extends Widget {
     this.mainArea.classList.add('hexlab_main_area');
     this.node.appendChild(this.mainArea);
 
+    // Top area has controls for opening a local file
     let topArea = document.createElement('div');
     topArea.classList.add('--jp-code-font-family');
     topArea.classList.add('--jp-code-font-size');
@@ -73,7 +73,7 @@ class HexEditorWidget extends Widget {
     this.mainArea.appendChild(topArea);
     this.topArea = topArea;
 
-    // Set up some controls at the top of the layout
+    // Set up the file open button and filename label
     this.openButton = document.createElement('div');
     this.openInputHidden = document.createElement('input');
     this.openInputHidden.setAttribute('type', 'file');
@@ -84,19 +84,26 @@ class HexEditorWidget extends Widget {
     this.openButton.addEventListener('click', this.triggerFileDialog.bind(this), {passive: true});
     this.openInputHidden.addEventListener('input' , this.openFile.bind(this), {passive: true});
     this.topArea.appendChild(this.openButton);
-
+    // Label shows the name of the current open file
     let fileLabel = document.createElement('div');
     fileLabel.classList.add('hexlab_file_label');
     topArea.appendChild(fileLabel);
     fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
     this.fileLabel = fileLabel;
 
-    // Define a container for the hex area
+    // Define a container to hold the hex grid and related controls
     this.workspace = document.createElement('div');
     this.workspace.classList.add('hexlab_workspace');
     this.gridResizeChecker = new ResizeObserver(this.configureAndFillGrid.bind(this));
     this.gridResizeChecker.observe(this.workspace);
     this.mainArea.appendChild(this.workspace);
+
+    // Define a grid with slots to hold byte content
+    this.hexGrid = document.createElement('div');
+    this.hexGrid.classList.add('hexlab_hex_grid');
+    this.hexGrid.classList.add('--jp-code-font-family');
+    this.hexGrid.classList.add('--jp-code-font-size');
+    console.log(this.hexGrid);
 
     // TODO Finish this
     // Data scrolling is handled manually via this scrollbar
@@ -107,13 +114,6 @@ class HexEditorWidget extends Widget {
     // its parent container, it shows only a page that fits within
     // its parent, which should track the size of the window)
     this.scrollbar = getScrollbar();
-
-    // Define a grid with slots to hold byte content
-    this.hexGrid = document.createElement('div');
-    this.hexGrid.classList.add('hexlab_hex_grid');
-    this.hexGrid.classList.add('--jp-code-font-family');
-    this.hexGrid.classList.add('--jp-code-font-size');
-    console.log(this.hexGrid);
     this.workspace.appendChild(this.hexGrid);
     this.workspace.appendChild(this.scrollbar);
 
