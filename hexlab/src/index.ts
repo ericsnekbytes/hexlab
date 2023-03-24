@@ -18,9 +18,9 @@ function getScrollbar() {
   let scrollbar = document.createElement('div');
   scrollbar.classList.add('hexlab_scrollbar');
 
-  let scrollHandle = document.createElement('div');
-  scrollHandle.classList.add('hexlab_scrollhandle');
-  scrollbar.appendChild(scrollHandle);
+  let scrollGrip = document.createElement('div');
+  scrollGrip.classList.add('hexlab_scroll_grip');
+  scrollbar.appendChild(scrollGrip);
 
   return scrollbar;
 }
@@ -38,6 +38,9 @@ class HexEditorWidget extends Widget {
   fileLabel: any;
   hexGrid: HTMLElement;
   scrollbar: any;
+  scrollGrip: any;
+  mouseListenerAttached = false;
+  boundListener: any;
 
   gridResizeChecker: any;
 
@@ -109,11 +112,14 @@ class HexEditorWidget extends Widget {
     // Data scrolling is handled manually via this scrollbar
     // (this is not true scrolling of a long element with overflow,
     // it only tracks the position in the hex data and uses the
-    // scrollhandle to control how the hex grid is populated...the
+    // scrollGrip to control how the hex grid is populated...the
     // hexgrid itself will never be populated such that it overflows
     // its parent container, it shows only a page that fits within
     // its parent, which should track the size of the window)
     this.scrollbar = getScrollbar();
+    this.scrollGrip = this.scrollbar.querySelector('.hexlab_scroll_grip');
+    this.boundListener = this.handleScrollGripDragMove.bind(this)
+    this.scrollGrip.addEventListener('mousedown', this.handleScrollGripDragStart.bind(this));
     this.workspace.appendChild(this.hexGrid);
     this.workspace.appendChild(this.scrollbar);
 
@@ -167,6 +173,31 @@ class HexEditorWidget extends Widget {
     }
 
     this.configureAndFillGrid();
+  }
+
+  handleScrollGripDragMove(event: any) {
+    console.log('[Hexlab] Mouse event!');
+
+    // Handles subsequent mouse events until a mouseup
+    if (event.type == 'mousemove') {
+      console.log('[Hexlab] Move')
+    }
+    if (event.type == 'mouseup') {
+      console.log('[Hexlab] UP/DISCONNECT')
+      window.removeEventListener('mouseup', this.boundListener, false);
+      window.removeEventListener('mousemove', this.boundListener, false);
+      this.mouseListenerAttached = false;
+    }
+  }
+
+  handleScrollGripDragStart(event: any) {
+    console.log('[Hexlab] Scroll grip drag start!');
+    if(!this.mouseListenerAttached) {
+      window.addEventListener('mouseup', this.boundListener, false);
+      window.addEventListener('mousemove', this.boundListener, false);
+      this.mouseListenerAttached = true;
+      console.log('[Hexlab] Attached!');
+    }
   }
 
   getLastScrollPosition() {
