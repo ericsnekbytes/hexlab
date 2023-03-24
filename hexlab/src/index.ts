@@ -12,6 +12,19 @@ import {
 
 import { Widget } from '@lumino/widgets';
 
+import ResizeObserver from 'resize-observer-polyfill';
+
+function getScrollbar() {
+  let scrollbar = document.createElement('div');
+  scrollbar.classList.add('hexlab_scrollbar');
+
+  let scrollHandle = document.createElement('div');
+  scrollHandle.classList.add('hexlab_scrollhandle');
+  scrollbar.appendChild(scrollHandle);
+
+  return scrollbar;
+}
+
 class HexEditorWidget extends Widget {
   /**
   * TODO: Add docsxy
@@ -19,12 +32,13 @@ class HexEditorWidget extends Widget {
 
   rootContainer: HTMLElement;
   hexGridArea: HTMLElement;
+  scrollbar: any;
   hexContent: HTMLElement;
   topArea: HTMLElement;
   fileLabel: any;
   openButton: any;
   openInputHidden: any;
-//  gridResizeChecker: any;
+  gridResizeChecker: any;
 
   currentBlobData: Uint8Array | null;
   currentFilename: string | null;
@@ -77,9 +91,18 @@ class HexEditorWidget extends Widget {
     // Define a container for the hex area
     this.hexGridArea = document.createElement('div');
     this.hexGridArea.classList.add('hexlab_hex_grid_area');
-//    this.gridResizeChecker = new ResizeObserver(this.foobarwik.bind(this));
-//    this.gridResizeChecker.observe(this.hexGridArea);
+    this.gridResizeChecker = new ResizeObserver(this.foobarwik.bind(this));
+    this.gridResizeChecker.observe(this.hexGridArea);
     this.rootContainer.appendChild(this.hexGridArea);
+
+    // Data scrolling is handled manually via this scrollbar
+    // (this is not true scrolling of a long element with overflow,
+    // it only tracks the position in the hex data and uses the
+    // scrollhandle to control how the hex grid is populated...the
+    // hexgrid itself will never be populated such that it overflows
+    // its parent container, it shows only a page that fits within
+    // its parent, which should track the size of the window)
+    this.scrollbar = getScrollbar();
 
     // Define a grid with slots to hold byte content
     this.hexContent = document.createElement('div');
@@ -115,6 +138,7 @@ class HexEditorWidget extends Widget {
     this.currentFilename = null;
     this.currentFileSize = 0;
     this.currentPosition = 0;
+    this.fileLabel.innerText = '';
     try {
 //      let [fileHandle] = await window.showOpenFilePicker();
 //      const fileData = await fileHandle.getFile();
@@ -200,52 +224,10 @@ class HexEditorWidget extends Widget {
     )
   }
 
-  configureAndFillGrid() {
-    console.log('[Hexlab] FILL GRID');
-
-    this.hexContent.innerText = '';  // Empty the element
-    while (this.hexContent.firstChild != null) {
-      this.hexContent.removeChild(this.hexContent.lastChild!);
-    }
-
+  fillGrid() {
     let maxCellCount = Math.max(this.getMaxCellCount(), 1);
-    let rowCount = Math.max(this.getMaxRowCount(), 1);  // TODO rename
-    console.log('[Hexlab] Cell count: ' + maxCellCount);
-    console.log('[Hexlab] Row count: ' + rowCount);
-    console.log('[Hexlab] Position: ' + this.currentPosition);
 
-    // End of file will mean some rows are omitted near the end, and possibly a partial row
-    let remaining_bytes = this.currentFileSize - this.currentPosition;
-    let rows_needed = Math.max(1, Math.ceil(remaining_bytes / maxCellCount));
-    let rowCountForCurrentPosition = Math.min(rows_needed, rowCount);
-
-    // Build hex layout/dom structure
-    let rowItems = []
-    for (let rowIndex = 0; rowIndex < rowCountForCurrentPosition; rowIndex++) {
-      // Make a row container that holds the bytes for that row
-      let hexRowContainer = document.createElement('div');
-      hexRowContainer.classList.add('hexlab_row_container');
-      this.hexContent.appendChild(hexRowContainer);
-      rowItems.push(hexRowContainer);
-
-      // Make hex cells (holds 1 byte of our bin data)
-      let previous_row_count_plus_new_row = rowIndex + 1;
-      let totalRowOffset = (maxCellCount * (previous_row_count_plus_new_row)) - 1;
-      // ^Subtract 1 from this as it's a zero-based index
-      let cellCountThisRow = (this.currentPosition + totalRowOffset) > this.getLastScrollPosition() ? this.currentFileSize % maxCellCount : maxCellCount;
-//      let cellCountThisRow = (this.currentPosition + maxCellCount) >= this.currentFileSize ? this.currentFileSize % maxCellCount : maxCellCount;
-      console.log('[Hexlab] Calculated cell count: ' + cellCountThisRow);
-      for (let j = 0; j < cellCountThisRow; j++) {
-        let hexCell: any = document.createElement('div');
-        if (j == cellCountThisRow - 1) {
-          hexCell.style['background-color'] = 'red';
-        }
-        hexCell.classList.add('hexlab_hex_byte');
-        hexRowContainer.appendChild(hexCell);
-      }
-    }
-    console.log('[Hexlab] Actual rows: ' + rowItems.length);
-
+    let rowItems = this.hexContent.children;
     for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
       let hexRow = rowItems[rowIndex];
 
@@ -287,6 +269,54 @@ class HexEditorWidget extends Widget {
         cell.innerText = charmap[left_hex] + charmap[right_hex];
       }
     }
+  }
+
+  configureAndFillGrid() {
+    console.log('[Hexlab] FILL GRID');
+
+    this.hexContent.innerText = '';  // Empty the element
+    while (this.hexContent.firstChild != null) {
+      this.hexContent.removeChild(this.hexContent.lastChild!);
+    }
+
+    let maxCellCount = Math.max(this.getMaxCellCount(), 1);
+    let rowCount = Math.max(this.getMaxRowCount(), 1);  // TODO rename
+    console.log('[Hexlab] Cell count: ' + maxCellCount);
+    console.log('[Hexlab] Row count: ' + rowCount);
+    console.log('[Hexlab] Position: ' + this.currentPosition);
+
+    // End of file will mean some rows are omitted near the end, and possibly a partial row
+    let remaining_bytes = this.currentFileSize - this.currentPosition;
+    let rows_needed = Math.max(1, Math.ceil(remaining_bytes / maxCellCount));
+    let rowCountForCurrentPosition = Math.min(rows_needed, rowCount);
+
+    // Build hex layout/dom structure
+    let rowItems = []
+    for (let rowIndex = 0; rowIndex < rowCountForCurrentPosition; rowIndex++) {
+      // Make a row container that holds the bytes for that row
+      let hexRowContainer = document.createElement('div');
+      hexRowContainer.classList.add('hexlab_row_container');
+      this.hexContent.appendChild(hexRowContainer);
+      rowItems.push(hexRowContainer);
+
+      // Make hex cells (holds 1 byte of our bin data)
+      let previous_row_count_plus_new_row = rowIndex + 1;
+      let totalRowOffset = (maxCellCount * (previous_row_count_plus_new_row)) - 1;
+      // ^Subtract 1 from this as it's a zero-based index
+      let cellCountThisRow = (this.currentPosition + totalRowOffset) > this.getLastScrollPosition() ? this.currentFileSize % maxCellCount : maxCellCount;
+      console.log('[Hexlab] Calculated cell count: ' + cellCountThisRow);
+      for (let j = 0; j < cellCountThisRow; j++) {
+        let hexCell: any = document.createElement('div');
+        if (j == cellCountThisRow - 1) {
+          hexCell.style['background-color'] = 'red';
+        }
+        hexCell.classList.add('hexlab_hex_byte');
+        hexRowContainer.appendChild(hexCell);
+      }
+    }
+    console.log('[Hexlab] Actual rows: ' + rowItems.length);
+
+    this.fillGrid();
   }
 }
 
