@@ -213,9 +213,14 @@ class HexEditorWidget extends Widget {
     console.log('[Hexlab] Row count: ' + rowCount);
     console.log('[Hexlab] Position: ' + this.currentPosition);
 
+    // End of file will mean some rows are omitted near the end, and possibly a partial row
+    let remaining_bytes = this.currentFileSize - this.currentPosition;
+    let rows_needed = Math.max(1, Math.ceil(remaining_bytes / maxCellCount));
+    let rowCountForCurrentPosition = Math.min(rows_needed, rowCount);
+
     // Build hex layout/dom structure
     let rowItems = []
-    for (let rowIndex = 0; rowIndex < Math.max(rowCount, 1); rowIndex++) {
+    for (let rowIndex = 0; rowIndex < rowCountForCurrentPosition; rowIndex++) {
       // Make a row container that holds the bytes for that row
       let hexRowContainer = document.createElement('div');
       hexRowContainer.classList.add('hexlab_row_container');
