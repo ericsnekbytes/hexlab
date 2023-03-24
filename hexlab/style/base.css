@@ -8,30 +8,15 @@
   height: 100%;
   background-color: #111111;
   border-radius: 2px;
-  padding: 0;
 }
 
-.hexlab_hex_grid_area {
-  width: 70%;
-  height: 100%;
-  background-color: #424242;
-  color: #616161;
-  border-radius: 2px;
-  margin: 8px;
-  flex-flow: row wrap;
-}
-
-.hexlab_hex_content {
-  width: 95%;
-  color: #616161;
-  border-radius: 2px;
-  margin: 8px;
+.hexlab_top_area {
+  display: inline;
 }
 
 .hexlab_open_button {
   height: 30px;
   width: 150px;
-  margin: 8px 0px 8px 8px;
   padding-top: 9px;
   text-align: center;
   vertical-align: middle;
@@ -39,26 +24,63 @@
   background-color: #2296f3;
   color: #212121;
   border: 0;
+  margin: 8px;
+  display: inline-block;
+}
+
+.hexlab_file_label {
+  height: 30px;
+  margin-top: 9px;
+  margin-left: 8px;
+  text-align: center;
+  vertical-align: middle;
+  color: #e6e6e6;
+  display: inline-block;
+}
+
+.hexlab_hex_grid_area {
+  width: 70%;
+  height: 80%;
+  background-color: #424242;
+  color: #616161;
+  border-radius: 2px;
+  margin: 8px;
+  padding: 8px;
+}
+
+.hexlab_hex_content {
+  width: 100%;
+  color: #616161;
+  border-radius: 2px;
+  display: block;
 }
 
 .hexlab_row_container {
   height: 20px;
-  margin: 4px;
+  width: 100%;
+  margin: 0px 0px 8px 0px;
+  display: inline-block;
 }
 
 .hexlab_hex_byte {
   height: 20px;
   width: 20px;
-  margin: 4px;
+  margin: 0px 4px 0px 4px;
   display: inline-block;
   text-align: center;
   vertical-align: middle;
   border-radius: 2px;
   background-color: #212121;
   color: #e6e6e6;
+  overflow: hidden;
 }
 
 .hexlab_root_container > input {
   display: none;
 }
 
+
+.hexlab_hex_content:last-child {
+  border-right-width: 1px;
+  border-color: red;
+}
