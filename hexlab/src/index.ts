@@ -182,19 +182,27 @@ class HexEditorWidget extends Widget {
     if (event.type == 'mousemove') {
       console.log('[Hexlab] Move')
 
-      console.log('FOOBAR');
+      console.log('MOVETRACE');
       let gripRect = this.scrollGrip.getBoundingClientRect();
-      console.log(typeof gripRect.top);
-      let pageY = event.pageY;
+      console.log('  GRIPRECT TOP');
+      console.log(gripRect.top);
+      let pageY = event.screenY;
+      console.log('  pageY');
+      console.log(pageY);
       let gripTop = parseInt(gripRect.top);
-      let scrollbarHeight = parseInt(window.getComputedStyle(this.scrollbar).getPropertyValue('height'));
+      console.log('  gripTop');
+      console.log(gripTop);
+      let scrollbarHeight = parseInt(
+        window.getComputedStyle(this.scrollbar).getPropertyValue('height'));
+      console.log('  scrollbarHeight');
       console.log(scrollbarHeight);
+      let scrollbarRect = this.scrollbar.getBoundingClientRect();
+      let scrollTop = parseInt(scrollbarRect.top);
+      console.log('  scrollTop');
+      console.log(scrollTop);
 
-      console.log(parseInt(event.pageY));
-      console.log(this.scrollGrip.getBoundingClientRect().top);
-
-      let newGripPosition = ((pageY - gripTop)).toString() + 'px';
-      console.log('NEWGRIP');
+      let newGripPosition = ((pageY - scrollTop) % scrollbarHeight).toString() + 'px';
+      console.log('  NEWGRIP');
       console.log(newGripPosition);
 
       this.scrollGrip.style.top = newGripPosition;
