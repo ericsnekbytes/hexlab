@@ -111,9 +111,10 @@ class HexEditorWidget extends Widget {
     // Clear/empty current hex grid
     this.hexContent.innerText = '';
 
-    // Clear stored filename and attempt to re-populate
+    // Clear stored file metadata and attempt to re-populate
     this.currentFilename = null;
-    this.currentFileSize = -1;
+    this.currentFileSize = 0;
+    this.currentPosition = 0;
     try {
 //      let [fileHandle] = await window.showOpenFilePicker();
 //      const fileData = await fileHandle.getFile();
@@ -228,7 +229,10 @@ class HexEditorWidget extends Widget {
       rowItems.push(hexRowContainer);
 
       // Make hex cells (holds 1 byte of our bin data)
-      let cellCountThisRow = (this.currentPosition + (maxCellCount * (rowIndex + 1))) > this.getLastScrollPosition() ? this.currentFileSize % rowCount : rowCount;
+      let previous_row_count_plus_new_row = rowIndex + 1;
+      let totalRowOffset = (maxCellCount * (previous_row_count_plus_new_row)) - 1;
+      // ^Subtract 1 from this as it's a zero-based index
+      let cellCountThisRow = (this.currentPosition + totalRowOffset) > this.getLastScrollPosition() ? this.currentFileSize % maxCellCount : maxCellCount;
 //      let cellCountThisRow = (this.currentPosition + maxCellCount) >= this.currentFileSize ? this.currentFileSize % maxCellCount : maxCellCount;
       console.log('[Hexlab] Calculated cell count: ' + cellCountThisRow);
       for (let j = 0; j < cellCountThisRow; j++) {
@@ -290,7 +294,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!yy5');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!yy7');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;
