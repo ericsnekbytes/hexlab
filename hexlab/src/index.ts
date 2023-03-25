@@ -176,18 +176,19 @@ class HexEditorWidget extends Widget {
   }
 
   getMinGripScroll() {
-//    let scrollbarRect = this.scrollbar.getBoundingClientRect();
-//
-//    let scrollTop = parseInt(scrollbarRect.top);
-
-    let GRIP_EDGE_SIZE = 8;
+    // Grip position setting uses the top of the grip rect,
+    // so we only need to leave space for the grip margin
     let GRIP_MARGIN = 2;
 
-    let minScrollInScrollbarRelativeCoords = (GRIP_EDGE_SIZE / 2) + GRIP_MARGIN;
+    let minScrollInScrollbarRelativeCoords = GRIP_MARGIN;
     return minScrollInScrollbarRelativeCoords;
   }
 
   getMaxGripScroll() {
+    // Grip position setting uses the top of the grip rect,
+    // so we need to leave space for the whole grip circle +
+    // the grip margin at the bottom so it doesn't overflow
+    // the scrollbar
     let scrollbarRect = this.scrollbar.getBoundingClientRect();
 
     let scrollHeight = parseInt(scrollbarRect.height);
@@ -195,7 +196,7 @@ class HexEditorWidget extends Widget {
     let GRIP_EDGE_SIZE = 8;
     let GRIP_MARGIN = 2;
 
-    let maxScroll = scrollHeight - (GRIP_EDGE_SIZE / 2) - GRIP_MARGIN;
+    let maxScroll = scrollHeight - GRIP_EDGE_SIZE - GRIP_MARGIN;
     return maxScroll;
   }
 
