@@ -41,6 +41,7 @@ class HexEditorWidget extends Widget {
   scrollGrip: any;
   mouseListenerAttached = false;
   boundListener: any;
+  lastGridFillTimestamp: any = new Date();
 
   gridResizeChecker: any;
 
@@ -145,6 +146,7 @@ class HexEditorWidget extends Widget {
     this.currentFilename = null;
     this.currentFileSize = 0;
     this.currentPosition = 0;
+    this.scrollbar.style.top = this.getMinGripScroll().toString() + 'px';
     this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
     try {
       console.log('FILELIST');
@@ -196,8 +198,13 @@ class HexEditorWidget extends Widget {
     let GRIP_EDGE_SIZE = 8;
     let GRIP_MARGIN = 2;
 
-    let maxScroll = scrollHeight - GRIP_EDGE_SIZE - GRIP_MARGIN;
-    return maxScroll;
+    let maxScrollInScrollbarRelativeCoords = scrollHeight - GRIP_EDGE_SIZE - GRIP_MARGIN;
+    return maxScrollInScrollbarRelativeCoords;
+  }
+
+  getGripScrollRange() {
+    // In scrollbar relative coords
+    return this.getMaxGripScroll() - this.getMinGripScroll();
   }
 
   handleScrollGripDragMove(event: any) {
@@ -230,18 +237,33 @@ class HexEditorWidget extends Widget {
       let scrollbarRelative = pageY - scrollTop;
       let clampedPosition = Math.min(Math.max(minScroll, scrollbarRelative), maxScroll);
 
-      let newGripPosition = clampedPosition.toString() + 'px';
+      let newGripPosition = clampedPosition;
       console.log('  NEWGRIP');
       console.log(newGripPosition);
 
-      let bytePos = Math.floor((clampedPosition / scrollHeight) * this.currentFileSize);
-      this.currentPosition = bytePos;
-      this.configureAndFillGrid();
+      let rawBytePos = Math.floor((clampedPosition / this.getGripScrollRange()) * this.currentFileSize);
+      let rowPosition = Math.min(this.getLastScrollPosition(), Math.floor(rawBytePos / this.getMaxCellCount()));
 
-      this.scrollGrip.style.top = newGripPosition;
+      console.log('  rawBytePos');
+      console.log(rawBytePos);
+      console.log('  rowPos');
+      console.log(rowPosition);
+
+      this.currentPosition = rowPosition;
+
+      // Throttle the grid fill op to once per 80 milliseconds
+      let now: any = new Date();
+      if ((now - this.lastGridFillTimestamp) > 80) {
+        this.configureAndFillGrid();
+      }
+
+      this.scrollGrip.style.top = newGripPosition.toString() + 'px';
     }
     if (event.type == 'mouseup') {
       console.log('[Hexlab] UP/DISCONNECT')
+
+      // Always fill grid on mouseup to ensure correct ending state
+      this.configureAndFillGrid();
       window.removeEventListener('mouseup', this.boundListener, false);
       window.removeEventListener('mousemove', this.boundListener, false);
       this.mouseListenerAttached = false;
@@ -357,6 +379,15 @@ class HexEditorWidget extends Widget {
         cell.innerText = charmap[left_hex] + charmap[right_hex];
       }
     }
+
+    this.setScrollGripPosition();
+  }
+
+  setScrollGripPosition() {
+    // Match scrollbar position to the current data position
+    let desiredGripPosition = (this.currentPosition / this.currentFileSize) * this.getMaxGripScroll();
+
+    this.scrollGrip.style.top = desiredGripPosition;
   }
 
   configureGrid() {
@@ -410,6 +441,7 @@ class HexEditorWidget extends Widget {
   }
 
   configureAndFillGrid() {
+    this.lastGridFillTimestamp = new Date();
     this.configureGrid();
     this.fillGrid();
   }
