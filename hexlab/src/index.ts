@@ -175,6 +175,30 @@ class HexEditorWidget extends Widget {
     this.configureAndFillGrid();
   }
 
+  getMinGripScroll() {
+//    let scrollbarRect = this.scrollbar.getBoundingClientRect();
+//
+//    let scrollTop = parseInt(scrollbarRect.top);
+
+    let GRIP_EDGE_SIZE = 8;
+    let GRIP_MARGIN = 2;
+
+    let minScrollInScrollbarRelativeCoords = (GRIP_EDGE_SIZE / 2) + GRIP_MARGIN;
+    return minScrollInScrollbarRelativeCoords;
+  }
+
+  getMaxGripScroll() {
+    let scrollbarRect = this.scrollbar.getBoundingClientRect();
+
+    let scrollHeight = parseInt(scrollbarRect.height);
+
+    let GRIP_EDGE_SIZE = 8;
+    let GRIP_MARGIN = 2;
+
+    let maxScroll = scrollHeight - (GRIP_EDGE_SIZE / 2) - GRIP_MARGIN;
+    return maxScroll;
+  }
+
   handleScrollGripDragMove(event: any) {
     console.log('[Hexlab] Mouse event!');
 
@@ -182,11 +206,14 @@ class HexEditorWidget extends Widget {
     if (event.type == 'mousemove') {
       console.log('[Hexlab] Move')
 
+      let minScroll = this.getMinGripScroll();
+      let maxScroll = this.getMaxGripScroll();
+
       console.log('MOVETRACE');
       let gripRect = this.scrollGrip.getBoundingClientRect();
       console.log('  GRIPRECT TOP');
       console.log(gripRect.top);
-      let pageY = event.screenY;
+      let pageY = event.pageY;
       console.log('  pageY');
       console.log(pageY);
       let gripTop = parseInt(gripRect.top);
@@ -200,8 +227,10 @@ class HexEditorWidget extends Widget {
       let scrollTop = parseInt(scrollbarRect.top);
       console.log('  scrollTop');
       console.log(scrollTop);
+      let scrollbarRelative = pageY - scrollTop;
+      let clampedPosition = Math.min(Math.max(minScroll, scrollbarRelative), maxScroll);
 
-      let newGripPosition = ((pageY - scrollTop) % scrollbarHeight).toString() + 'px';
+      let newGripPosition = clampedPosition.toString() + 'px';
       console.log('  NEWGRIP');
       console.log(newGripPosition);
 
