@@ -219,11 +219,10 @@ class HexEditorWidget extends Widget {
       let gripTop = parseInt(gripRect.top);
       console.log('  gripTop');
       console.log(gripTop);
-      let scrollbarHeight = parseInt(
-        window.getComputedStyle(this.scrollbar).getPropertyValue('height'));
-      console.log('  scrollbarHeight');
-      console.log(scrollbarHeight);
       let scrollbarRect = this.scrollbar.getBoundingClientRect();
+      let scrollHeight = parseInt(scrollbarRect.height);
+      console.log('  scrollbarHeight');
+      console.log(scrollHeight);
       let scrollTop = parseInt(scrollbarRect.top);
       console.log('  scrollTop');
       console.log(scrollTop);
@@ -233,6 +232,10 @@ class HexEditorWidget extends Widget {
       let newGripPosition = clampedPosition.toString() + 'px';
       console.log('  NEWGRIP');
       console.log(newGripPosition);
+
+      let bytePos = Math.floor((clampedPosition / scrollHeight) * this.currentFileSize);
+      this.currentPosition = bytePos;
+      this.configureAndFillGrid();
 
       this.scrollGrip.style.top = newGripPosition;
     }
