@@ -103,6 +103,7 @@
   vertical-align: top;
   margin: 0;
   padding: 0;
+  user-select: none;
 }
 
 .hexlab_scroll_grip {
@@ -113,4 +114,5 @@
   position: relative;
   top: 2px;
   left: 2px;
+  user-select: none;
 }

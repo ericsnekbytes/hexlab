@@ -243,20 +243,23 @@ class HexEditorWidget extends Widget {
 
       let rawBytePos = Math.floor((clampedPosition / this.getGripScrollRange()) * this.currentFileSize);
       let rowPosition = Math.min(this.getLastScrollPosition(), Math.floor(rawBytePos / this.getMaxCellCount()));
+      let closestRowPosition = Math.min(this.getLastScrollPosition(), Math.floor(rowPosition * this.getMaxCellCount()));
 
       console.log('  rawBytePos');
       console.log(rawBytePos);
       console.log('  rowPos');
       console.log(rowPosition);
 
-      this.currentPosition = rowPosition;
+      // Set the data position
+      this.currentPosition = closestRowPosition;
 
       // Throttle the grid fill op to once per 80 milliseconds
       let now: any = new Date();
-      if ((now - this.lastGridFillTimestamp) > 80) {
+      if ((now - this.lastGridFillTimestamp) > 60) {
         this.configureAndFillGrid();
       }
 
+      // Set the grip position
       this.scrollGrip.style.top = newGripPosition.toString() + 'px';
     }
     if (event.type == 'mouseup') {
@@ -385,9 +388,23 @@ class HexEditorWidget extends Widget {
 
   setScrollGripPosition() {
     // Match scrollbar position to the current data position
-    let desiredGripPosition = (this.currentPosition / this.currentFileSize) * this.getMaxGripScroll();
+    let barPositionPercentOfMax = (this.currentPosition / this.currentFileSize);
+    console.log('PERCENT');
+    console.log(barPositionPercentOfMax);
+    let desiredGripPositionRaw = Math.floor(barPositionPercentOfMax * this.getMaxGripScroll());
+    console.log('GRIP RAW');
+    console.log(desiredGripPositionRaw);
+    let desiredGripPosition = Math.max(
+      Math.min(this.getMaxGripScroll(), desiredGripPositionRaw),
+      this.getMinGripScroll()
+    )
 
-    this.scrollGrip.style.top = desiredGripPosition;
+    console.log('DESIREDGRIPPOS');
+    console.log(desiredGripPosition);
+
+    if (desiredGripPosition != NaN) {
+      this.scrollGrip.style.top = desiredGripPosition.toString() + 'px';
+    }
   }
 
   configureGrid() {
