@@ -241,24 +241,28 @@ class HexEditorWidget extends Widget {
       console.log('  NEWGRIP');
       console.log(newGripPosition);
 
-      let rawBytePos = Math.floor((clampedPosition / this.getGripScrollRange()) * this.currentFileSize);
-      let rowPosition = Math.min(this.getLastScrollPosition(), Math.floor(rawBytePos / this.getMaxCellCount()));
-      let closestRowPosition = Math.min(this.getLastScrollPosition(), Math.floor(rowPosition * this.getMaxCellCount()));
+      let dataPositionAsPercent = clampedPosition / this.getGripScrollRange();
+      console.log('  DATAPERCENTx');
+      console.log(dataPositionAsPercent);
+      let rawBytePos = (dataPositionAsPercent * this.currentFileSize) % this.currentFileSize;
+      let rowIndexForPosition = Math.min(this.getLastScrollPosition(), Math.floor(rawBytePos / this.getMaxCellCount()));
+      let rowStartByteIndexForPosition = Math.floor(rowIndexForPosition * this.getMaxCellCount());
+      let clampedRowStartPosition = Math.max(0, Math.min(this.getLastScrollPosition(), rowStartByteIndexForPosition));
 
       console.log('  rawBytePos');
       console.log(rawBytePos);
-      console.log('  rowPos');
-      console.log(rowPosition);
+      console.log('  clamped row start');
+      console.log(clampedRowStartPosition);
 
       // Set the data position
-      this.currentPosition = closestRowPosition;
-      if (newGripPosition == this.getMinGripScroll()) {
+      this.currentPosition = clampedRowStartPosition;
+      if (newGripPosition <= this.getMinGripScroll()) {
         this.currentPosition = 0;
-      } else if (newGripPosition == this.getMaxGripScroll()) {
+      } else if (newGripPosition >= this.getMaxGripScroll()) {
         this.currentPosition = this.getLastScrollPosition();
       }
 
-      // Throttle the grid fill op to once per 80 milliseconds
+      // Throttle the grid fill op to once per 60 milliseconds
       let now: any = new Date();
       if ((now - this.lastGridFillTimestamp) > 60) {
         this.configureAndFillGrid();
@@ -290,18 +294,44 @@ class HexEditorWidget extends Widget {
 
   getLastScrollPosition() {
     // The last data position users can scroll to (last row start)
-    return this.currentFileSize - (Math.max(this.getMaxCellCount(), this.currentFileSize % this.getMaxCellCount()));
+
+    // Get total # of full rows (non-partial rows) needed
+    // to display all the data in the current file
+    let totalFullRowCount = Math.floor(this.currentFileSize / this.getMaxCellCount());
+    console.log('LASTSCROLL');
+    console.log('  FULLROWS');
+    console.log(totalFullRowCount);
+    console.log('  CURRPOS');
+    console.log(this.currentPosition);
+
+    let lastPosition = 0;
+    if (this.currentFileSize % this.getMaxCellCount() == 0) {
+      // TODO FIX
+      console.log('  THING1');
+      lastPosition = Math.max(0, (totalFullRowCount * this.getMaxCellCount()) - this.getMaxCellCount());
+    } else {
+      console.log('  THING2');
+      lastPosition = totalFullRowCount * this.getMaxCellCount();
+    }
+    console.log('  LASTPOSITION');
+    console.log(lastPosition);
+
+    return lastPosition;
   }
 
   handleScrollEvent(event: any) {
     console.log('[Hexlab] WHEEL EVENT')
     console.log(event)
     let minDelta = this.getMaxCellCount();
+    let lastScrollPosition = this.getLastScrollPosition();
+    console.log('  currentPosition');
+    console.log(this.currentPosition);
+    console.log('  last data scroll pos');
+    console.log(lastScrollPosition);
 
     if (event.deltaY < 0) {
       this.currentPosition = Math.max(0, this.currentPosition - minDelta);
     } else {
-      let lastScrollPosition = this.getLastScrollPosition();
       this.currentPosition = Math.min(lastScrollPosition, this.currentPosition + minDelta);
     }
 
@@ -398,10 +428,16 @@ class HexEditorWidget extends Widget {
   setScrollGripPosition() {
     // Match scrollbar position to the current data position
     let barPositionPercentOfMax = (this.currentPosition / this.currentFileSize);
-    console.log('PERCENT');
+    console.log('CUIRRENTPOS');
+    console.log(this.currentPosition);
+    console.log('FSIZE');
+    console.log(this.currentFileSize);
+    console.log('PERCENT as decimal');
     console.log(barPositionPercentOfMax);
-    let desiredGripPositionRaw = Math.floor(barPositionPercentOfMax * this.getMaxGripScroll());
-    console.log('GRIP RAW');
+    console.log('MAXGRIPSC');
+    console.log(this.getMaxGripScroll());
+    let desiredGripPositionRaw = barPositionPercentOfMax * this.getMaxGripScroll();
+    console.log('GRIP RAWx');
     console.log(desiredGripPositionRaw);
     let desiredGripPosition = Math.max(
       Math.min(this.getMaxGripScroll(), desiredGripPositionRaw),
@@ -417,7 +453,6 @@ class HexEditorWidget extends Widget {
   }
 
   configureGrid() {
-
     console.log('[Hexlab] FILL GRID');
 
     this.hexGrid.innerText = '';  // Empty the element
@@ -425,9 +460,13 @@ class HexEditorWidget extends Widget {
       this.hexGrid.removeChild(this.hexGrid.lastChild!);
     }
 
+    // Get theoretical max cell/row count for this page size
     let maxCellCount = this.getMaxCellCount();
     let maxRowCount = this.getMaxRowCount();
     if (this.currentFileSize > 0) {
+      // If the file is non-empty, but the page is too
+      // small to show even a single row/column, show
+      // a single row/column/cell anyway and let it overflow
       maxCellCount = Math.max(this.getMaxCellCount(), 1);
       maxRowCount = Math.max(maxRowCount, 1);
     } else {
@@ -438,7 +477,9 @@ class HexEditorWidget extends Widget {
     console.log('[Hexlab] Row count: ' + maxRowCount);
     console.log('[Hexlab] Position: ' + this.currentPosition);
 
-    // End of file will mean some rows are omitted near the end, and possibly a partial row
+    // End of file will mean some rows are omitted near the end (meaning there's
+    // room on the page to show extra rows but there's no data to put there bc
+    // we're at the end), and possibly a partial row at the bottom
     let remaining_bytes = this.currentFileSize - this.currentPosition;
     let rows_needed = Math.ceil(remaining_bytes / maxCellCount);
     if (this.currentFileSize > 0) {
@@ -456,10 +497,10 @@ class HexEditorWidget extends Widget {
       rowItems.push(hexRow);
 
       // Make hex cells (holds 1 byte of our bin data)
-      let rowBeginDataPosition = (maxCellCount * (rowIndex)) + this.currentPosition;
+      let rowBeginDataPosition = this.currentPosition + (maxCellCount * (rowIndex));
       let cellCountThisRow = maxCellCount;
-      if (this.currentFileSize - rowBeginDataPosition < maxCellCount) {
-        cellCountThisRow = this.currentFileSize - rowBeginDataPosition;
+      if ((rowBeginDataPosition + maxCellCount) > this.currentFileSize) {
+        cellCountThisRow = this.currentFileSize % maxCellCount;
       }
       console.log('[Hexlab] Calculated cell count: ' + cellCountThisRow);
 

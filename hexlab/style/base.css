@@ -83,6 +83,7 @@
   background-color: #212121;
   color: #e6e6e6;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .hexlab_root_container > input {
