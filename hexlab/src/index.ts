@@ -252,6 +252,11 @@ class HexEditorWidget extends Widget {
 
       // Set the data position
       this.currentPosition = closestRowPosition;
+      if (newGripPosition == this.getMinGripScroll()) {
+        this.currentPosition = 0;
+      } else if (newGripPosition == this.getMaxGripScroll()) {
+        this.currentPosition = this.getLastScrollPosition();
+      }
 
       // Throttle the grid fill op to once per 80 milliseconds
       let now: any = new Date();
@@ -284,6 +289,7 @@ class HexEditorWidget extends Widget {
   }
 
   getLastScrollPosition() {
+    // The last data position users can scroll to (last row start)
     return this.currentFileSize - (this.currentFileSize % this.getMaxCellCount());
   }
 
