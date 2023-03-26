@@ -290,7 +290,7 @@ class HexEditorWidget extends Widget {
 
   getLastScrollPosition() {
     // The last data position users can scroll to (last row start)
-    return this.currentFileSize - (this.currentFileSize % this.getMaxCellCount());
+    return this.currentFileSize - (Math.max(this.getMaxCellCount(), this.currentFileSize % this.getMaxCellCount()));
   }
 
   handleScrollEvent(event: any) {
