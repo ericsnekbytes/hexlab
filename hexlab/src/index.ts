@@ -42,6 +42,7 @@ class HexEditorWidget extends Widget {
   mouseListenerAttached = false;
   boundListener: any;
   lastGridFillTimestamp: any = new Date();
+  DEBUG = true;
 
   gridResizeChecker: any;
 
@@ -107,7 +108,6 @@ class HexEditorWidget extends Widget {
     this.hexGrid.classList.add('hexlab_hex_grid');
     this.hexGrid.classList.add('--jp-code-font-family');
     this.hexGrid.classList.add('--jp-code-font-size');
-    console.log(this.hexGrid);
 
     // TODO Finish this
     // Data scrolling is handled manually via this scrollbar
@@ -128,15 +128,22 @@ class HexEditorWidget extends Widget {
     this.node.addEventListener('wheel', this.handleScrollEvent.bind(this));
   }
 
+  debugLog(message: any) {
+    if (this.DEBUG) {
+      console.log(message)
+    }
+  }
+
   triggerFileDialog() {
     this.openInputHidden.click();
   }
 
   async openFile() {
-    console.log('[HexLab] Opening File');
+    console.log('[HexLab] **** Opening File ****');
 
-    console.log('INPUTELEM');
-    console.log(this.openInputHidden);
+    // Trigger the <input> element to get a file dialog
+    this.debugLog('[Hexlab] Input elem');
+    this.debugLog(this.openInputHidden);
     this.openInputHidden.click();
 
     // Clear/empty current hex grid
@@ -148,9 +155,11 @@ class HexEditorWidget extends Widget {
     this.currentPosition = 0;
     this.scrollbar.style.top = this.getMinGripScroll().toString() + 'px';
     this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
+
+    // Attempt to get file contents
     try {
-      console.log('FILELIST');
-      console.log(this.openInputHidden.files);
+      this.debugLog('[Hexlab] File list');
+      this.debugLog(this.openInputHidden.files);
       const fileData = this.openInputHidden.files[0];
       let binRaw = await fileData.arrayBuffer();
       let binData = new Uint8Array(binRaw);
@@ -166,7 +175,7 @@ class HexEditorWidget extends Widget {
 
       console.log('[Hexlab] File opened successfully');
     } catch (err) {
-      console.log('[Hexlab] Error opening file');
+      console.log('[Hexlab] Unkown error opening file');
     } finally {
       if (this.currentFilename == null) {
         console.log('[Hexlab] File open failed');
@@ -208,51 +217,50 @@ class HexEditorWidget extends Widget {
   }
 
   handleScrollGripDragMove(event: any) {
-    console.log('[Hexlab] Mouse event!');
+    this.debugLog('[Hexlab] **** Mouse event! ****');
 
     // Handles subsequent mouse events until a mouseup
     if (event.type == 'mousemove') {
-      console.log('[Hexlab] Move')
+      this.debugLog('[Hexlab] -- Move event found --')
 
       let minScroll = this.getMinGripScroll();
       let maxScroll = this.getMaxGripScroll();
 
-      console.log('MOVETRACE');
       let gripRect = this.scrollGrip.getBoundingClientRect();
-      console.log('  GRIPRECT TOP');
-      console.log(gripRect.top);
+      this.debugLog('[Hexlab]   GRIPRECT TOP');
+      this.debugLog(gripRect.top);
       let pageY = event.pageY;
-      console.log('  pageY');
-      console.log(pageY);
+      this.debugLog('[Hexlab]   pageY');
+      this.debugLog(pageY);
       let gripTop = parseInt(gripRect.top);
-      console.log('  gripTop');
-      console.log(gripTop);
+      this.debugLog('[Hexlab]   gripTop');
+      this.debugLog(gripTop);
       let scrollbarRect = this.scrollbar.getBoundingClientRect();
       let scrollHeight = parseInt(scrollbarRect.height);
-      console.log('  scrollbarHeight');
-      console.log(scrollHeight);
+      this.debugLog('[Hexlab]   scrollbarHeight');
+      this.debugLog(scrollHeight);
       let scrollTop = parseInt(scrollbarRect.top);
-      console.log('  scrollTop');
-      console.log(scrollTop);
+      this.debugLog('[Hexlab]   scrollTop');
+      this.debugLog(scrollTop);
       let scrollbarRelative = pageY - scrollTop;
       let clampedPosition = Math.min(Math.max(minScroll, scrollbarRelative), maxScroll);
 
       let newGripPosition = clampedPosition;
-      console.log('  NEWGRIP');
-      console.log(newGripPosition);
+      this.debugLog('[Hexlab]   NEWGRIP');
+      this.debugLog(newGripPosition);
 
       let dataPositionAsPercent = clampedPosition / this.getGripScrollRange();
-      console.log('  DATAPERCENTx');
-      console.log(dataPositionAsPercent);
+      this.debugLog('[Hexlab]   DATAPERCENTx');
+      this.debugLog(dataPositionAsPercent);
       let rawBytePos = (dataPositionAsPercent * this.currentFileSize) % this.currentFileSize;
       let rowIndexForPosition = Math.min(this.getLastScrollPosition(), Math.floor(rawBytePos / this.getMaxCellCount()));
       let rowStartByteIndexForPosition = Math.floor(rowIndexForPosition * this.getMaxCellCount());
       let clampedRowStartPosition = Math.max(0, Math.min(this.getLastScrollPosition(), rowStartByteIndexForPosition));
 
-      console.log('  rawBytePos');
-      console.log(rawBytePos);
-      console.log('  clamped row start');
-      console.log(clampedRowStartPosition);
+      this.debugLog('[Hexlab]   rawBytePos');
+      this.debugLog(rawBytePos);
+      this.debugLog('[Hexlab]   clamped row start');
+      this.debugLog(clampedRowStartPosition);
 
       // Set the data position
       this.currentPosition = clampedRowStartPosition;
@@ -272,7 +280,7 @@ class HexEditorWidget extends Widget {
       this.scrollGrip.style.top = newGripPosition.toString() + 'px';
     }
     if (event.type == 'mouseup') {
-      console.log('[Hexlab] UP/DISCONNECT')
+      this.debugLog('[Hexlab] -- mouseUp found! --')
 
       // Always fill grid on mouseup to ensure correct ending state
       this.configureAndFillGrid();
@@ -283,51 +291,52 @@ class HexEditorWidget extends Widget {
   }
 
   handleScrollGripDragStart(event: any) {
-    console.log('[Hexlab] Scroll grip drag start!');
+    this.debugLog('[Hexlab] **** Scroll grip drag start! ****');
     if(!this.mouseListenerAttached) {
       window.addEventListener('mouseup', this.boundListener, false);
       window.addEventListener('mousemove', this.boundListener, false);
       this.mouseListenerAttached = true;
-      console.log('[Hexlab] Attached!');
+      this.debugLog('[Hexlab] Attached!');
     }
   }
 
   getLastScrollPosition() {
+    this.debugLog('[Hexlab] **** Get Last Scroll Position ****')
     // The last data position users can scroll to (last row start)
 
     // Get total # of full rows (non-partial rows) needed
     // to display all the data in the current file
     let totalFullRowCount = Math.floor(this.currentFileSize / this.getMaxCellCount());
-    console.log('LASTSCROLL');
-    console.log('  FULLROWS');
-    console.log(totalFullRowCount);
-    console.log('  CURRPOS');
-    console.log(this.currentPosition);
+    this.debugLog('[Hexlab] LASTSCROLL');
+    this.debugLog('[Hexlab]   FULLROWS');
+    this.debugLog(totalFullRowCount);
+    this.debugLog('[Hexlab]   CURRPOS');
+    this.debugLog(this.currentPosition);
 
     let lastPosition = 0;
     if (this.currentFileSize % this.getMaxCellCount() == 0) {
       // TODO FIX
-      console.log('  THING1');
+      this.debugLog('[Hexlab]   THING1');
       lastPosition = Math.max(0, (totalFullRowCount * this.getMaxCellCount()) - this.getMaxCellCount());
     } else {
-      console.log('  THING2');
+      this.debugLog('[Hexlab]   THING2');
       lastPosition = totalFullRowCount * this.getMaxCellCount();
     }
-    console.log('  LASTPOSITION');
-    console.log(lastPosition);
+    this.debugLog('[Hexlab]   LASTPOSITION');
+    this.debugLog(lastPosition);
 
     return lastPosition;
   }
 
   handleScrollEvent(event: any) {
-    console.log('[Hexlab] WHEEL EVENT')
-    console.log(event)
+    this.debugLog('[Hexlab] **** Wheel event ****')
+    this.debugLog(event)
     let minDelta = this.getMaxCellCount();
     let lastScrollPosition = this.getLastScrollPosition();
-    console.log('  currentPosition');
-    console.log(this.currentPosition);
-    console.log('  last data scroll pos');
-    console.log(lastScrollPosition);
+    this.debugLog('[Hexlab]   currentPosition');
+    this.debugLog(this.currentPosition);
+    this.debugLog('[Hexlab]   last data scroll pos');
+    this.debugLog(lastScrollPosition);
 
     if (event.deltaY < 0) {
       this.currentPosition = Math.max(0, this.currentPosition - minDelta);
@@ -422,30 +431,32 @@ class HexEditorWidget extends Widget {
       }
     }
 
-    this.setScrollGripPosition();
+    this.alignScrollGripPositionToData();
   }
 
-  setScrollGripPosition() {
+  alignScrollGripPositionToData() {
+    ('[Hexlab] **** Set scroll grip position ****')
     // Match scrollbar position to the current data position
+    // (used after a wheelevent to sync the scrollbar to the new data position)
     let barPositionPercentOfMax = (this.currentPosition / this.currentFileSize);
-    console.log('CUIRRENTPOS');
-    console.log(this.currentPosition);
-    console.log('FSIZE');
-    console.log(this.currentFileSize);
-    console.log('PERCENT as decimal');
-    console.log(barPositionPercentOfMax);
-    console.log('MAXGRIPSC');
-    console.log(this.getMaxGripScroll());
+    this.debugLog('[Hexlab] CUIRRENTPOS');
+    this.debugLog(this.currentPosition);
+    this.debugLog('[Hexlab] FSIZE');
+    this.debugLog(this.currentFileSize);
+    this.debugLog('[Hexlab] PERCENT as decimal');
+    this.debugLog(barPositionPercentOfMax);
+    this.debugLog('[Hexlab] MAXGRIPSC');
+    this.debugLog(this.getMaxGripScroll());
     let desiredGripPositionRaw = barPositionPercentOfMax * this.getMaxGripScroll();
-    console.log('GRIP RAWx');
-    console.log(desiredGripPositionRaw);
+    this.debugLog('[Hexlab] GRIP RAWx');
+    this.debugLog(desiredGripPositionRaw);
     let desiredGripPosition = Math.max(
       Math.min(this.getMaxGripScroll(), desiredGripPositionRaw),
       this.getMinGripScroll()
     )
 
-    console.log('DESIREDGRIPPOS');
-    console.log(desiredGripPosition);
+    this.debugLog('[Hexlab] DESIREDGRIPPOS');
+    this.debugLog(desiredGripPosition);
 
     if (desiredGripPosition != NaN) {
       this.scrollGrip.style.top = desiredGripPosition.toString() + 'px';
@@ -453,7 +464,7 @@ class HexEditorWidget extends Widget {
   }
 
   configureGrid() {
-    console.log('[Hexlab] FILL GRID');
+    this.debugLog('[Hexlab] **** Configure Grid ****');
 
     this.hexGrid.innerText = '';  // Empty the element
     while (this.hexGrid.firstChild != null) {
@@ -473,9 +484,9 @@ class HexEditorWidget extends Widget {
       // Don't fill/populate the grid for empty files
       return;
     }
-    console.log('[Hexlab] Cell count: ' + maxCellCount);
-    console.log('[Hexlab] Row count: ' + maxRowCount);
-    console.log('[Hexlab] Position: ' + this.currentPosition);
+    this.debugLog('[Hexlab] Cell count: ' + maxCellCount);
+    this.debugLog('[Hexlab] Row count: ' + maxRowCount);
+    this.debugLog('[Hexlab] Position: ' + this.currentPosition);
 
     // End of file will mean some rows are omitted near the end (meaning there's
     // room on the page to show extra rows but there's no data to put there bc
@@ -502,7 +513,7 @@ class HexEditorWidget extends Widget {
       if ((rowBeginDataPosition + maxCellCount) > this.currentFileSize) {
         cellCountThisRow = this.currentFileSize % maxCellCount;
       }
-      console.log('[Hexlab] Calculated cell count: ' + cellCountThisRow);
+      this.debugLog('[Hexlab] Calculated cell count: ' + cellCountThisRow);
 
       // Add needed hex cell elements
       for (let j = 0; j < cellCountThisRow; j++) {
@@ -515,7 +526,7 @@ class HexEditorWidget extends Widget {
         hexRow.appendChild(hexCell);
       }
     }
-    console.log('[Hexlab] Actual rows: ' + rowItems.length);
+    this.debugLog('[Hexlab] Actual rows: ' + rowItems.length);
 
     this.fillGrid();
   }
@@ -533,7 +544,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!yy9');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;
