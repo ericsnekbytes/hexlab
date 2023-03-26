@@ -303,7 +303,7 @@ class HexEditorWidget extends Widget {
   }
 
   getMaxCellCount() {
-    let CELLROWMARGIN = 8;
+    let CELLROWMARGIN = 8;  // TODO refactor these values
 
     // Determines how many cells can fit in the hex area width
     let gridWidthRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('width');
@@ -330,7 +330,6 @@ class HexEditorWidget extends Widget {
     let CELL_WIDTH =  20;
     let CELL_MARGIN = 8;
     return Math.max(
-      1,
       Math.floor(
         ((gridHeight - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
       )
@@ -338,7 +337,11 @@ class HexEditorWidget extends Widget {
   }
 
   fillGrid() {
-    let maxCellCount = Math.max(this.getMaxCellCount(), 1);
+    let maxCellCount = this.getMaxCellCount();
+    if (this.currentFileSize > 0) {
+      // If the file is non-empty, show at least 1 cell even if page too narrow
+      maxCellCount = Math.max(this.getMaxCellCount(), 1)
+    }
 
     let rowItems = this.hexGrid.children;
     for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
@@ -416,16 +419,26 @@ class HexEditorWidget extends Widget {
       this.hexGrid.removeChild(this.hexGrid.lastChild!);
     }
 
-    let maxCellCount = Math.max(this.getMaxCellCount(), 1);
-    let rowCount = Math.max(this.getMaxRowCount(), 1);  // TODO rename
+    let maxCellCount = this.getMaxCellCount();
+    let maxRowCount = this.getMaxRowCount();
+    if (this.currentFileSize > 0) {
+      maxCellCount = Math.max(this.getMaxCellCount(), 1);
+      maxRowCount = Math.max(maxRowCount, 1);
+    } else {
+      // Don't fill/populate the grid for empty files
+      return;
+    }
     console.log('[Hexlab] Cell count: ' + maxCellCount);
-    console.log('[Hexlab] Row count: ' + rowCount);
+    console.log('[Hexlab] Row count: ' + maxRowCount);
     console.log('[Hexlab] Position: ' + this.currentPosition);
 
     // End of file will mean some rows are omitted near the end, and possibly a partial row
     let remaining_bytes = this.currentFileSize - this.currentPosition;
-    let rows_needed = Math.max(1, Math.ceil(remaining_bytes / maxCellCount));
-    let rowCountForCurrentPosition = Math.min(rows_needed, rowCount);
+    let rows_needed = Math.ceil(remaining_bytes / maxCellCount);
+    if (this.currentFileSize > 0) {
+      rows_needed = Math.max(1, Math.ceil(remaining_bytes / maxCellCount))
+    }
+    let rowCountForCurrentPosition = Math.min(rows_needed, maxRowCount);
 
     // Build hex layout/dom structure
     let rowItems = []
@@ -437,11 +450,14 @@ class HexEditorWidget extends Widget {
       rowItems.push(hexRow);
 
       // Make hex cells (holds 1 byte of our bin data)
-      let previous_row_count_plus_new_row = rowIndex + 1;
-      let totalRowOffset = (maxCellCount * (previous_row_count_plus_new_row)) - 1;
-      // ^Subtract 1 from this as it's a zero-based index
-      let cellCountThisRow = (this.currentPosition + totalRowOffset) > this.getLastScrollPosition() ? this.currentFileSize % maxCellCount : maxCellCount;
+      let rowBeginDataPosition = (maxCellCount * (rowIndex)) + this.currentPosition;
+      let cellCountThisRow = maxCellCount;
+      if (this.currentFileSize - rowBeginDataPosition < maxCellCount) {
+        cellCountThisRow = this.currentFileSize - rowBeginDataPosition;
+      }
       console.log('[Hexlab] Calculated cell count: ' + cellCountThisRow);
+
+      // Add needed hex cell elements
       for (let j = 0; j < cellCountThisRow; j++) {
         let hexCell: any = document.createElement('div');
         if (j == cellCountThisRow - 1) {
@@ -460,7 +476,9 @@ class HexEditorWidget extends Widget {
   configureAndFillGrid() {
     this.lastGridFillTimestamp = new Date();
     this.configureGrid();
-    this.fillGrid();
+    if (this.currentFileSize > 0) {
+      this.fillGrid();
+    }
   }
 }
 
