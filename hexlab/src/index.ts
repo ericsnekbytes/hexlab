@@ -498,59 +498,55 @@ class HexEditorWidget extends Widget {
     this.debugLog('[Hexlab] Max cell count: ' + maxCellCount);
     this.debugLog('[Hexlab] Max row count: ' + maxRowCount);
 
-    let bytesTillDataEnd = this.currentFileSize - this.currentPosition;
-    this.debugLog('[Hexlab] Bytes to go from here: ' + bytesTillDataEnd);
+    // Make rows until the file end is reached
+    let rowElements: any = [];
+    let rowStartPos = this.currentPosition;
+    while (rowStartPos < this.currentFileSize) {
+      rowStartPos += maxCellCount;
 
-    // Get the number of complete rows and the remainder (partial row)
-    let completeRowsNeeded = Math.floor(bytesTillDataEnd / maxCellCount);
-    let byteRemainder = this.currentFileSize % maxCellCount;
-
-    // Calculate the actual number of rows needed (complete + partial)
-    let calculatedRowsNeeded = completeRowsNeeded
-    if (byteRemainder <= 0) {
-      // Add a row for the remainder bytes at the end
-      calculatedRowsNeeded += 1;
-    }
-    // Clamp the row count if it exceeds the page capacity to hold the rows
-    calculatedRowsNeeded = Math.min(calculatedRowsNeeded, maxRowCount);
-
-//    if (this.currentFileSize > 0) {a
-//      rows_needed = Math.max(1, Math.ceil(remaining_bytes / maxCellCount))
-//    }
-//    let rowCountForCurrentPosition = Math.min(rows_needed, maxRowCount);
-
-    // Build hex layout/dom structure
-    let rowItems = []
-    for (let rowIndex = 0; rowIndex < calculatedRowsNeeded; rowIndex++) {
       // Make a row container that holds the bytes for that row
       let hexRow = document.createElement('div');
       hexRow.classList.add('hexlab_hex_row');
       this.hexGrid.appendChild(hexRow);
-      rowItems.push(hexRow);
+      rowElements.push(hexRow);
+    }
 
-      // Make hex cells (holds 1 byte of our bin data)
-      // .............................................
-      // We need to know which byte to start with when populating
-      let rowStartBytePosition = this.currentPosition + (maxCellCount * rowIndex);
-//      let rowBeginDataPosition = this.currentPosition + (maxCellCount * (rowIndex));
-      let calculatedCellsNeeded = maxCellCount;
-      if ((rowStartBytePosition + maxCellCount) >= this.currentFileSize) {
-        calculatedCellsNeeded = byteRemainder;
-      }
-      this.debugLog('[Hexlab] Calculated cells needed value, pagerow[' + rowIndex + ']: ' + calculatedCellsNeeded);
+    // Add cells to each row until the file end is reached
+    for (let rowCount = 0; rowCount < rowElements.length; rowCount++) {
+      this.debugLog('[Hexlab] -- Row Start --');
+      this.debugLog(rowCount);
+      for (let cellPosition = 0; cellPosition < maxCellCount; cellPosition++) {
+        let currentRow = rowElements[rowCount];
 
-      // Add needed hex cell elements
-      for (let cellIndex = 0; cellIndex < calculatedCellsNeeded; cellIndex++) {
-        let hexCell: any = document.createElement('div');
-        if (cellIndex == calculatedCellsNeeded - 1) {
-          hexCell.style['background-color'] = 'red';
-          hexCell.style['margin-right'] = '0px';
+        // Get the position of the hex cell we're going to make
+        let bytePosition = this.currentPosition + (maxCellCount * rowCount) + cellPosition;
+        this.debugLog('[Hexlab] BytePosition');
+        this.debugLog(bytePosition);
+
+        // Add a cell if the position is valid (not past file size bounds)
+        if (bytePosition < this.currentFileSize) {
+          // Create the hex cell layout item
+          let hexCell: any = document.createElement('div');
+          hexCell.classList.add('hexlab_hex_byte');
+
+          // Do any cell post processing here
+          if (cellPosition == maxCellCount - 1) {
+            this.debugLog('[Hexlab] last cell in row at ' + bytePosition);
+            this.debugLog(bytePosition);
+            hexCell.style['background-color'] = 'red';
+            hexCell.style['margin-right'] = '0px';
+          }
+
+          // Append the cell to the layout row
+          currentRow.appendChild(hexCell);
         }
-        hexCell.classList.add('hexlab_hex_byte');
-        hexRow.appendChild(hexCell);
+        else {
+          this.debugLog('[Hexlab] BREAK on byteposition ' + bytePosition);
+          this.debugLog(bytePosition);
+          break;
+        }
       }
     }
-    this.debugLog('[Hexlab] Actual rows: ' + rowItems.length);
 
     this.fillGrid();
   }
@@ -568,7 +564,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!ww1');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;
