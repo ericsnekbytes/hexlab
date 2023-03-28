@@ -530,11 +530,15 @@ class HexEditorWidget extends Widget {
           hexCell.classList.add('hexlab_hex_byte');
 
           // Do any cell post processing here
-          if (cellPosition == maxCellCount - 1) {
+          if (cellPosition == maxCellCount - 1 || bytePosition == this.currentFileSize - 1) {
             this.debugLog('[Hexlab] last cell in row at ' + bytePosition);
             this.debugLog(bytePosition);
             hexCell.style['background-color'] = 'red';
             hexCell.style['margin-right'] = '0px';
+          }
+          if (bytePosition == this.currentFileSize - 1) {
+            this.debugLog('[Hexlab] Last file byte! ' + bytePosition);
+            hexCell.style['background-color'] = 'blue';
           }
 
           // Append the cell to the layout row
