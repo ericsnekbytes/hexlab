@@ -49,7 +49,19 @@ class HexEditorWidget extends Widget {
   currentBlobData: Uint8Array | null;
   currentFilename: string | null;
   currentFileSize: number;
+  // CurrentPosition marks a row-start, and should always
+  // be aligned to a max-cell-count multiple (page reflows
+  // cause the valid row start positions to change)...this
+  // marks the top-left byte position on the page
   currentPosition: number;
+  // Cursor is always present in the current page, it marks
+  // a byte for the app to focus on during resizing reflow
+  // (where the max cell count changes and causes the hex
+  // cells to reflow), which should help users orient
+  // themselves at a place in the data during page-changing
+  // events (Where am I in the data now since the page changed?
+  // Oh, there's the cursor, where I was previously...)
+  cursor = 0;
 
   constructor() {
     super();
@@ -125,7 +137,7 @@ class HexEditorWidget extends Widget {
     this.workspace.appendChild(this.scrollbar);
 
     this.configureAndFillGrid();
-    this.node.addEventListener('wheel', this.handleScrollEvent.bind(this));
+    this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
   }
 
   debugLog(message: any) {
@@ -139,7 +151,7 @@ class HexEditorWidget extends Widget {
   }
 
   async openFile() {
-    console.log('[HexLab] **** Opening File ****');
+    console.log('[HexLab] ******** Opening File ********');
 
     // Trigger the <input> element to get a file dialog
     this.debugLog('[Hexlab] Input elem');
@@ -217,12 +229,12 @@ class HexEditorWidget extends Widget {
   }
 
   handleGridResize() {
-    this.debugLog('[Hexlab] **** GRID RESIZE ****');
+    this.debugLog('[Hexlab] ******** GRID RESIZE ********');
     this.configureAndFillGrid();
   }
 
   handleScrollGripDragMove(event: any) {
-    this.debugLog('[Hexlab] **** Mouse event! ****');
+    this.debugLog('[Hexlab] ******** Mouse event! ********');
 
     // Handles subsequent mouse events until a mouseup
     if (event.type == 'mousemove') {
@@ -258,9 +270,9 @@ class HexEditorWidget extends Widget {
       this.debugLog('[Hexlab]   DATAPERCENTx');
       this.debugLog(dataPositionAsPercent);
       let rawBytePos = (dataPositionAsPercent * this.currentFileSize) % this.currentFileSize;
-      let rowIndexForPosition = Math.min(this.getLastScrollPosition(), Math.floor(rawBytePos / this.getMaxCellCount()));
+      let rowIndexForPosition = Math.min(this.getLastDataStartPosition(), Math.floor(rawBytePos / this.getMaxCellCount()));
       let rowStartByteIndexForPosition = Math.floor(rowIndexForPosition * this.getMaxCellCount());
-      let clampedRowStartPosition = Math.max(0, Math.min(this.getLastScrollPosition(), rowStartByteIndexForPosition));
+      let clampedRowStartPosition = Math.max(0, Math.min(this.getLastDataStartPosition(), rowStartByteIndexForPosition));
 
       this.debugLog('[Hexlab]   rawBytePos');
       this.debugLog(rawBytePos);
@@ -270,9 +282,16 @@ class HexEditorWidget extends Widget {
       // Set the data position
       this.currentPosition = clampedRowStartPosition;
       if (newGripPosition <= this.getMinGripScroll()) {
+        // A grip top pos, go to byte 0
         this.currentPosition = 0;
       } else if (newGripPosition >= this.getMaxGripScroll()) {
-        this.currentPosition = this.getLastScrollPosition();
+        // A grip bottom pos, go to last data position (last row start)
+        this.currentPosition = this.getLastDataStartPosition();
+      }
+      let range = this.getPageByteRangeInclusive();
+      if (!(this.currentPosition >= range[0] && this.currentPosition <= range[1])) {
+        // TODO this should do a vertical cursor move instead probably?
+        this.cursor = range[0];
       }
 
       // Throttle the grid fill op to once per 60 milliseconds
@@ -295,8 +314,32 @@ class HexEditorWidget extends Widget {
     }
   }
 
+  printBasicDiagnosticInfo() {
+    this.debugLog('[Hexlab]   -------- Diagnostic Info --------');
+    this.debugLog('[Hexlab]     FileName: ' + this.currentFilename);
+    this.debugLog('[Hexlab]     FileSize: ' + this.currentFileSize);
+    this.debugLog('[Hexlab]     Data Position: ' + this.currentPosition);
+    this.debugLog('[Hexlab]     Cursor: ' + this.cursor);
+    this.debugLog('[Hexlab]     lastDataPosition: ' + this.getLastDataStartPosition());
+    this.debugLog('[Hexlab]     closestToCursor: ' + this.getClosestRowStartForPosition(this.cursor));
+    this.debugLog('[Hexlab]     pageByteRange: ' + this.getPageByteRangeInclusive());
+    this.debugLog('[Hexlab]     positionValid: ' + this.isValidRowStartPosition(this.currentPosition));
+    this.debugLog('[Hexlab]     positionMultiple: ' + (this.currentPosition % this.getMaxCellCount() == 0));
+    this.debugLog('[Hexlab]   --------');
+    this.debugLog('[Hexlab]     maxCellCount: ' + this.getMaxCellCount());
+    this.debugLog('[Hexlab]     maxRowCount: ' + this.getMaxRowCount());
+    this.debugLog('[Hexlab]   --------');
+    this.debugLog('[Hexlab]     scrollbarPosition: ' + this.scrollbar.style.top);
+    this.debugLog('[Hexlab]     scrollbarHeight: ' + this.scrollbar.style.height);
+    this.debugLog('[Hexlab]     gripMin: ' + this.getMinGripScroll());
+    this.debugLog('[Hexlab]     gripMax: ' + this.getMaxGripScroll());
+    this.debugLog('[Hexlab]     gripRange: ' + this.getGripScrollRange());
+    this.debugLog('[Hexlab]   ------ End Diagnostic Info ------');
+  }
+
   handleScrollGripDragStart(event: any) {
-    this.debugLog('[Hexlab] **** Scroll grip drag start! ****');
+    this.debugLog('[Hexlab] ******** Scroll grip drag start! ********');
+    this.printBasicDiagnosticInfo();
     if(!this.mouseListenerAttached) {
       window.addEventListener('mouseup', this.boundListener, false);
       window.addEventListener('mousemove', this.boundListener, false);
@@ -305,60 +348,92 @@ class HexEditorWidget extends Widget {
     }
   }
 
-  getLastScrollPosition() {
-    this.debugLog('[Hexlab] **** Get Last Scroll Position ****')
-    // The last data position users can scroll to (last row start)
+  getLastDataStartPosition() {
+  // The last data position users can scroll to (last row start)
 
-    // Get total # of full rows (non-partial rows) needed
-    // to display all the data in the current file
-    let totalFullRowCount = Math.floor(this.currentFileSize / this.getMaxCellCount());
-    this.debugLog('[Hexlab] LASTSCROLL');
-    this.debugLog('[Hexlab]   FULLROWS');
-    this.debugLog(totalFullRowCount);
-    this.debugLog('[Hexlab]   CURRPOS');
-    this.debugLog(this.currentPosition);
-
-    let lastPosition = 0;
-    if (this.currentFileSize % this.getMaxCellCount() == 0) {
-      // TODO FIX
-      this.debugLog('[Hexlab]   THING1');
-      lastPosition = Math.max(0, (totalFullRowCount * this.getMaxCellCount()) - this.getMaxCellCount());
-    } else {
-      this.debugLog('[Hexlab]   THING2');
-      lastPosition = totalFullRowCount * this.getMaxCellCount();
+    // Return for empty files
+    if (this.currentFileSize < 1) {
+      return 0;
     }
-    this.debugLog('[Hexlab]   LASTPOSITION');
-    this.debugLog(lastPosition);
+
+    // Actual width may be less than 1 cell wide, do min of 1
+    // (1 hex cell with overflow is min display behavior)
+    let maxCellCountModified = Math.max(1, this.getMaxCellCount());
+
+    // Get total num rows needed (including any partial row)
+    let totalRowCount = Math.ceil(this.currentFileSize / maxCellCountModified);
+    let lastRowNumberZeroBased = Math.max(0, totalRowCount - 1);
+
+    let lastPosition = lastRowNumberZeroBased * maxCellCountModified;
+
+//    let totalRowCount = Math.ceil(this.currentFileSize / maxCellCountModified);
+//    let lastPosition = Math.max(0, totalRowCount * this.getMaxCellCount() - this.getMaxCellCount());
+////    this.debugLog('[Hexlab] LASTSCROLL');
+////    this.debugLog('[Hexlab]   FULLROWS');
+////    this.debugLog(totalFullRowCount);
+////    this.debugLog('[Hexlab]   CURRPOS');
+////    this.debugLog(this.currentPosition);
+////
+////    let lastPosition = 0;
+////    if (this.currentFileSize % this.getMaxCellCount() == 0) {
+////      // TODO FIX
+////      this.debugLog('[Hexlab]   THING1');
+////      lastPosition = Math.max(0, (totalFullRowCount * this.getMaxCellCount()) - this.getMaxCellCount());
+////    } else {
+////      this.debugLog('[Hexlab]   THING2');
+////      lastPosition = totalFullRowCount * this.getMaxCellCount();
+////    }
+////    this.debugLog('[Hexlab]   LASTPOSITION');
+////    this.debugLog(lastPosition);
 
     return lastPosition;
   }
 
-  handleScrollEvent(event: any) {
-    this.debugLog('[Hexlab] **** Wheel event ****')
+  handleWheelEvent(event: any) {
+    this.debugLog('[Hexlab] ******** Wheel event ********')
     this.debugLog(event)
     let minDelta = this.getMaxCellCount();
-    let lastScrollPosition = this.getLastScrollPosition();
-    this.debugLog('[Hexlab]   currentPosition');
-    this.debugLog(this.currentPosition);
-    this.debugLog('[Hexlab]   last data scroll pos');
-    this.debugLog(lastScrollPosition);
+    let lastScrollPosition = this.getLastDataStartPosition();
+    this.printBasicDiagnosticInfo();
 
+    // Check for up/down movement and respond accordingly
     if (event.deltaY < 0) {
       this.currentPosition = Math.max(0, this.currentPosition - minDelta);
     } else {
       this.currentPosition = Math.min(lastScrollPosition, this.currentPosition + minDelta);
+    }
+    if (!this.isValidRowStartPosition(this.currentPosition)) {
+      // Shouldn't be necessary
+      this.currentPosition = this.getClosestRowStartForPosition(this.currentPosition);
+      this.debugLog('[Hexlab] ERROR bad start position on wheel event');
+    }
+    this.printBasicDiagnosticInfo();
+
+    // Check the cursor
+    let range = this.getPageByteRangeInclusive();
+    if (!(this.cursor >= range[0] && this.cursor <= range[1])) {
+      this.debugLog('[Hexlab]   cursor outside');
+      if (event.deltaY < 0) {
+        this.debugLog('[Hexlab]   subtract from cursor pos');
+        this.cursor -= this.getMaxCellCount();
+        this.cursor = Math.max(0, this.cursor);
+      } else {
+        this.debugLog('[Hexlab]   add to cursor pos');
+        this.cursor += this.getMaxCellCount();
+        this.cursor = Math.max(0, Math.min(this.currentFileSize - 1, this.cursor));
+      }
     }
 
     this.configureAndFillGrid();
   }
 
   getMaxCellCount() {
+    // Gets raw how-many-cells-fit-in-this-page-width value
+    // (doesn't impose any minimums etc, just gives cells per width)
     let CELLROWMARGIN = 8;  // TODO refactor these values
 
     // Determines how many cells can fit in the hex area width
     let gridWidthRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('width');
-    gridWidthRaw.replace('p', '');
-    gridWidthRaw.replace('x', '');
     let gridWidth: number = parseInt(gridWidthRaw) - (2 * CELLROWMARGIN);
 
     let CELL_WIDTH =  20;  // TODO refactor these values
@@ -369,27 +444,38 @@ class HexEditorWidget extends Widget {
   }
 
   getMaxRowCount() {
+    // Gets raw how-many-row-fit-in-this-page-height value
+    // (doesn't impose any minimums etc, just gives rows per height)
     let CELLROWMARGIN = 8;
 
     // Determines how many rows can fit in the hex area height
     let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
-    gridHeightRaw.replace('p', '');
-    gridHeightRaw.replace('x', '');
     let gridHeight: number = parseInt(gridHeightRaw) - (2 * CELLROWMARGIN);
 
     let CELL_WIDTH =  20;
     let CELL_MARGIN = 8;
-    return Math.max(
-      Math.floor(
-        ((gridHeight - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
-      )
+    let maxRows = Math.floor(
+      ((gridHeight - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
     )
+
+    return maxRows;
   }
 
   alignScrollGripPositionToData() {
-    ('[Hexlab] **** Set scroll grip position ****')
+    ('[Hexlab] ******** Set scroll grip position ********')
     // Match scrollbar position to the current data position
     // (used after a wheelevent to sync the scrollbar to the new data position)
+    this.printBasicDiagnosticInfo();
+
+    if (this.currentPosition == this.getLastDataStartPosition()) {
+      this.scrollGrip.style.top = this.getMaxGripScroll().toString() + 'px';
+      return;
+    }
+    if (this.currentPosition == 0) {
+      this.scrollGrip.style.top = this.getMinGripScroll().toString() + 'px';
+      return;
+    }
+
     let barPositionPercentOfMax = (this.currentPosition / this.currentFileSize);
     this.debugLog('[Hexlab] CUIRRENTPOS');
     this.debugLog(this.currentPosition);
@@ -399,7 +485,7 @@ class HexEditorWidget extends Widget {
     this.debugLog(barPositionPercentOfMax);
     this.debugLog('[Hexlab] MAXGRIPSC');
     this.debugLog(this.getMaxGripScroll());
-    let desiredGripPositionRaw = barPositionPercentOfMax * this.getMaxGripScroll();
+    let desiredGripPositionRaw = barPositionPercentOfMax * (this.getMaxGripScroll() - this.getMinGripScroll());
     this.debugLog('[Hexlab] GRIP RAWx');
     this.debugLog(desiredGripPositionRaw);
     let desiredGripPosition = Math.max(
@@ -412,16 +498,63 @@ class HexEditorWidget extends Widget {
 
     if (desiredGripPosition != NaN) {
       this.scrollGrip.style.top = desiredGripPosition.toString() + 'px';
+    } else {
+      this.debugLog('[Hexlab] ERROR NaN grip pos');
     }
   }
 
-  fillGrid() {
-    this.debugLog('[Hexlab] **** Fill Grid ****');
-    let maxCellCount = this.getMaxCellCount();
-    if (this.currentFileSize > 0) {
-      // If the file is non-empty, show at least 1 cell even if page too narrow
-      maxCellCount = Math.max(this.getMaxCellCount(), 1)
+  getPageByteRangeInclusive() {
+    // Gets min/max POSITIONS (indices) of bytes on the page
+    // (if there's a partial row, end should be last byte index)
+    // Note: This is all byte positions showable on the page,
+    // does not include indices past current end of file
+    if (this.currentFileSize < 1) {
+      return [0, 0];
     }
+
+    let start = this.currentPosition;
+
+    let maxCellCount = this.getMaxCellCount()
+    let maxRowCount = this.getMaxRowCount()
+    let maxCellCountModified = Math.max(maxCellCount, 1);
+    let maxRowCountModified = Math.max(maxRowCount, 1);
+
+    // Max end byte on at this position is at most [page size] bytes from position
+    let lastByteForPageSize = this.currentPosition + (maxCellCountModified * maxRowCountModified) - 1;
+
+    // We may be near the end of the file with partial/absent rows
+    let end = lastByteForPageSize;
+    if (!(end < this.currentFileSize)) {
+      end = Math.max(0, this.currentFileSize - 1);
+    }
+
+    return [start, end];
+  }
+
+  isValidRowStartPosition(position: number) {
+    if (position % this.getMaxCellCount() == 0) {
+      return true;
+    }
+    return false;
+  }
+
+  getLastByteIndex() {
+    if (this.fileSizeNonZero()) {
+      return this.currentFileSize - 1;
+    }
+    return 0;
+  }
+
+  fileSizeNonZero() {
+    if (this.currentFileSize < 1) {
+      return false;
+    }
+    return true;
+  }
+
+  fillGrid() {
+    this.debugLog('[Hexlab] ******** Fill Grid ********');
+    let maxCellCountModified = Math.max(this.getMaxCellCount(), 1);
 
     let rowItems = this.hexGrid.children;
     for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
@@ -430,10 +563,11 @@ class HexEditorWidget extends Widget {
       for (let cellIndex = 0; cellIndex < hexRow.children.length; cellIndex++) {  // TODO does a whitespace node show up here?
         let cell: any = hexRow.children[cellIndex];
 
-        let byteIndex = this.currentPosition + (maxCellCount * rowIndex) + cellIndex;
-        if (byteIndex > (this.currentFileSize - 1)) {
+        let byteIndex = this.currentPosition + (maxCellCountModified * rowIndex) + cellIndex;
+        if (!(byteIndex < this.currentFileSize)) {
           this.debugLog('[Hexlab] ERROR BAD BYTE INDEX');
           this.debugLog(byteIndex);
+          return;
         }
         let currentByte = this.currentBlobData![byteIndex];
 
@@ -465,6 +599,9 @@ class HexEditorWidget extends Widget {
         if (cellIndex == rowItems.length - 1) {
           cell.style['margin-right'] = '0';
         }
+        if (byteIndex == this.cursor) {
+          cell.style['background-color'] = 'purple';
+        }
 
         cell.innerText = charmap[left_hex] + charmap[right_hex];
       }
@@ -473,55 +610,86 @@ class HexEditorWidget extends Widget {
     this.alignScrollGripPositionToData();
   }
 
+  getClosestRowStartForPosition(position: number) {
+    let maxCellCountModified = Math.max(1, this.getMaxCellCount());  // TODO conv func
+
+    // Calculate how many rows of bytes are needed to have (position) many bytes
+    let positionOneBased = position + 1;
+    let rowsNeededForPosition = positionOneBased / maxCellCountModified;
+
+    // Each row start INDEX is a multiple of row count (0-4 with 5 cell count,
+    // then next row starts at index 5), take the floor of total rows needed
+    let closestRowIndexZeroBased = Math.floor(rowsNeededForPosition);
+    let closestRowStartBytePosition = closestRowIndexZeroBased * maxCellCountModified;
+
+    return closestRowStartBytePosition;
+  }
+
   configureGrid() {
-    this.debugLog('[Hexlab] **** Configure Grid ****');
+    this.debugLog('[Hexlab] ******** Configure Grid ********');
 
     this.hexGrid.innerText = '';  // Empty the element
     while (this.hexGrid.firstChild != null) {
       this.hexGrid.removeChild(this.hexGrid.lastChild!);
     }
 
+    // Do not populate for empty files
+    if (this.currentFileSize < 1) {
+      return;
+    }
+
+    // Show some basic stats
+    this.printBasicDiagnosticInfo();
+
+    // Fix the current position (if it's not a multiple of
+    // the current max cell count, make it one)...we use the
+    // closest position to the cursor to attempt to keep the
+    // same place on screen/in-page during hex cell reflow
+    if (!this.isValidRowStartPosition(this.currentPosition)) {
+      this.debugLog('[Hexlab] CLOSEST ROW FIX');
+      this.debugLog('[Hexlab]   CURSOR STATS');
+      this.debugLog(this.cursor);
+      this.debugLog(this.getClosestRowStartForPosition(this.cursor));
+      this.currentPosition = this.getClosestRowStartForPosition(this.cursor);
+    }
+
     // Get theoretical max cell/row count for this page size
     let maxCellCount = this.getMaxCellCount();
     let maxRowCount = this.getMaxRowCount();
-    if (this.currentFileSize > 0) {
-      // If the file is non-empty, but the page is too
-      // small to show even a single row/column, show
-      // a single row/column/cell anyway and let it overflow
-      maxCellCount = Math.max(this.getMaxCellCount(), 1);
-      maxRowCount = Math.max(maxRowCount, 1);
-    } else {
-      // Don't fill/populate the grid for empty files
-      return;
-    }
-    this.debugLog('[Hexlab] Position: ' + this.currentPosition);
-    this.debugLog('[Hexlab] Max cell count: ' + maxCellCount);
-    this.debugLog('[Hexlab] Max row count: ' + maxRowCount);
+    // If the file is non-empty, but the page is too
+    // small to show even a single row/column, show
+    // a single row/column/cell anyway and let it overflow
+    let maxCellCountModified = Math.max(maxCellCount, 1);
+    let maxRowCountModified = Math.max(maxRowCount, 1);
 
     // Make rows until the file end is reached
     let rowElements: any = [];
     let rowStartPos = this.currentPosition;
     while (rowStartPos < this.currentFileSize) {
-      rowStartPos += maxCellCount;
-
       // Make a row container that holds the bytes for that row
       let hexRow = document.createElement('div');
       hexRow.classList.add('hexlab_hex_row');
       this.hexGrid.appendChild(hexRow);
       rowElements.push(hexRow);
+      this.debugLog('[Hexlab] Add row for start byte: ' + rowStartPos);
+
+      rowStartPos += maxCellCountModified;
+    }
+    this.debugLog('[Hexlab] Actual rows created: ' + rowElements.length);
+    if (rowElements.length > maxRowCountModified) {
+       this.debugLog('[Hexlab] ERROR: Actual rows exceeds max ');
     }
 
     // Add cells to each row until the file end is reached
     for (let rowCount = 0; rowCount < rowElements.length; rowCount++) {
-      this.debugLog('[Hexlab] -- Row Start --');
-      this.debugLog(rowCount);
-      for (let cellPosition = 0; cellPosition < maxCellCount; cellPosition++) {
+      this.debugLog('[Hexlab] -- Row Start @ '+ rowCount);
+      for (let cellPosition = 0; cellPosition < maxCellCountModified; cellPosition++) {
         let currentRow = rowElements[rowCount];
 
         // Get the position of the hex cell we're going to make
-        let bytePosition = this.currentPosition + (maxCellCount * rowCount) + cellPosition;
-        this.debugLog('[Hexlab] BytePosition');
-        this.debugLog(bytePosition);
+        let bytePosition = this.currentPosition + (maxCellCountModified * rowCount) + cellPosition;
+//        this.debugLog('[Hexlab] BytePosition');
+//        this.debugLog(bytePosition);
 
         // Add a cell if the position is valid (not past file size bounds)
         if (bytePosition < this.currentFileSize) {
@@ -530,9 +698,8 @@ class HexEditorWidget extends Widget {
           hexCell.classList.add('hexlab_hex_byte');
 
           // Do any cell post processing here
-          if (cellPosition == maxCellCount - 1 || bytePosition == this.currentFileSize - 1) {
+          if (cellPosition == maxCellCountModified - 1 || bytePosition == this.currentFileSize - 1) {
             this.debugLog('[Hexlab] last cell in row at ' + bytePosition);
-            this.debugLog(bytePosition);
             hexCell.style['background-color'] = 'red';
             hexCell.style['margin-right'] = '0px';
           }
@@ -546,7 +713,6 @@ class HexEditorWidget extends Widget {
         }
         else {
           this.debugLog('[Hexlab] BREAK on byteposition ' + bytePosition);
-          this.debugLog(bytePosition);
           break;
         }
       }
@@ -568,7 +734,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!bb555');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;
