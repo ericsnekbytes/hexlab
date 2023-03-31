@@ -617,20 +617,26 @@ class HexEditorWidget extends Widget {
       return this.getLastDataStartPosition();
     }
 
-    // Calculate how many rows of bytes are needed to have (position) many bytes
     let byteCountForPosition = position + 1;
-    let rowsNeededForPosition = byteCountForPosition / maxCellCountModified;
-    let remainderBytes = this.currentFileSize - position;
-    if (remainderBytes == 0) {
-      return (Math.ceil(rowsNeededForPosition) * maxCellCountModified) - maxCellCountModified;
-    }
-
-    // Each row start INDEX is a multiple of row count (0-4 with 5 cell count,
-    // then next row starts at index 5), take the floor of total rows needed
-    let closestRowIndexZeroBased = Math.floor(rowsNeededForPosition);
-    let closestRowStartBytePosition = closestRowIndexZeroBased * maxCellCountModified;
+    let rowsNeededForPosition = Math.ceil(byteCountForPosition / maxCellCountModified);
+    let closestRowStartBytePosition = (rowsNeededForPosition * maxCellCountModified) - maxCellCountModified;
 
     return closestRowStartBytePosition;
+
+//    // Calculate how many rows of bytes are needed to have (position) many bytes
+//    let byteCountForPosition = position + 1;
+//    let rowsNeededForPosition = byteCountForPosition / maxCellCountModified;
+//    let remainderBytes = this.currentFileSize - position;
+//    if (remainderBytes == 0) {
+//      return (Math.ceil(rowsNeededForPosition) * maxCellCountModified) - maxCellCountModified;
+//    }
+//
+//    // Each row start INDEX is a multiple of row count (0-4 with 5 cell count,
+//    // then next row starts at index 5), take the floor of total rows needed
+//    let closestRowIndexZeroBased = Math.floor(rowsNeededForPosition);
+//    let closestRowStartBytePosition = closestRowIndexZeroBased * maxCellCountModified;
+//
+//    return closestRowStartBytePosition;
   }
 
   configureGrid() {
@@ -658,7 +664,8 @@ class HexEditorWidget extends Widget {
       this.debugLog('[Hexlab]   CURSOR STATS');
       this.debugLog(this.cursor);
       this.debugLog(this.getClosestRowStartForPosition(this.cursor));
-      this.currentPosition = this.getClosestRowStartForPosition(this.cursor);
+      let desiredPosition = this.getClosestRowStartForPosition(this.cursor);
+      this.currentPosition = desiredPosition;
     }
 
     // Get theoretical max cell/row count for this page size
@@ -743,7 +750,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!cc222');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!cc555');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;
