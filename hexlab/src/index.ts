@@ -233,6 +233,16 @@ class HexEditorWidget extends Widget {
     this.configureAndFillGrid();
   }
 
+  handleCellClick(event: any) {
+    this.debugLog(' ******** Cell Click ********');
+    this.printBasicDiagnosticInfo();
+    this.debugLog(event);
+
+    let cell = event.target;
+    this.cursor = cell.metadata.byteIndex;
+    this.configureAndFillGrid();
+  }
+
   handleWheelEvent(event: any) {
     this.debugLog('[Hexlab] ******** Wheel event ********')
     this.debugLog(event)
@@ -648,8 +658,13 @@ class HexEditorWidget extends Widget {
     let rowStartPos = this.currentPosition;
     while (rowStartPos <= range[1]) {
       // Make a row container that holds the bytes for that row
-      let hexRow = document.createElement('div');
+      let hexRow: any = document.createElement('div');
       hexRow.classList.add('hexlab_hex_row');
+      hexRow.metadata = {
+        byteIndex: rowStartPos,
+        containerIndex: rowElements.length
+      }
+
       this.hexGrid.appendChild(hexRow);
       rowElements.push(hexRow);
       this.debugLog('[Hexlab] Add row for start byte: ' + rowStartPos);
@@ -677,6 +692,11 @@ class HexEditorWidget extends Widget {
           // Create the hex cell layout item
           let hexCell: any = document.createElement('div');
           hexCell.classList.add('hexlab_hex_byte');
+          hexCell.metadata = {
+            byteIndex: bytePosition,
+            containerIndex: cellPosition,
+          }
+          hexCell.addEventListener('click', this.handleCellClick.bind(this));
 
           // Do any cell post processing here
           if (cellPosition == maxCellCountModified - 1 || bytePosition == this.currentFileSize - 1) {
