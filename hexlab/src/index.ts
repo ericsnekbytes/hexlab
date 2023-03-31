@@ -362,9 +362,8 @@ class HexEditorWidget extends Widget {
 
     // Get total num rows needed (including any partial row)
     let totalRowCount = Math.ceil(this.currentFileSize / maxCellCountModified);
-    let lastRowNumberZeroBased = Math.max(0, totalRowCount - 1);
 
-    let lastPosition = lastRowNumberZeroBased * maxCellCountModified;
+    let lastPosition = Math.max(0, (totalRowCount - 1)) * maxCellCountModified;
 
 //    let totalRowCount = Math.ceil(this.currentFileSize / maxCellCountModified);
 //    let lastPosition = Math.max(0, totalRowCount * this.getMaxCellCount() - this.getMaxCellCount());
@@ -600,7 +599,7 @@ class HexEditorWidget extends Widget {
           cell.style['margin-right'] = '0';
         }
         if (byteIndex == this.cursor) {
-          cell.style['background-color'] = 'purple';
+          cell.style['background-color'] = 'pink';
         }
 
         cell.innerText = charmap[left_hex] + charmap[right_hex];
@@ -613,9 +612,18 @@ class HexEditorWidget extends Widget {
   getClosestRowStartForPosition(position: number) {
     let maxCellCountModified = Math.max(1, this.getMaxCellCount());  // TODO conv func
 
+    // Any index past the file bounds goes to last valid row start position
+    if (position > this.getLastDataStartPosition()) {
+      return this.getLastDataStartPosition();
+    }
+
     // Calculate how many rows of bytes are needed to have (position) many bytes
-    let positionOneBased = position + 1;
-    let rowsNeededForPosition = positionOneBased / maxCellCountModified;
+    let byteCountForPosition = position + 1;
+    let rowsNeededForPosition = byteCountForPosition / maxCellCountModified;
+    let remainderBytes = this.currentFileSize - position;
+    if (remainderBytes == 0) {
+      return (Math.ceil(rowsNeededForPosition) * maxCellCountModified) - maxCellCountModified;
+    }
 
     // Each row start INDEX is a multiple of row count (0-4 with 5 cell count,
     // then next row starts at index 5), take the floor of total rows needed
@@ -665,7 +673,8 @@ class HexEditorWidget extends Widget {
     // Make rows until the file end is reached
     let rowElements: any = [];
     let rowStartPos = this.currentPosition;
-    while (rowStartPos < this.currentFileSize) {
+    let range = this.getPageByteRangeInclusive();
+    while (rowStartPos <= range[1]) {
       // Make a row container that holds the bytes for that row
       let hexRow = document.createElement('div');
       hexRow.classList.add('hexlab_hex_row');
@@ -734,7 +743,7 @@ class HexEditorWidget extends Widget {
 * Activate the hexlab widget extension.
 */
 function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!bb555');
+  console.log('[Hexlab] JupyterLab extension hexlab is activated!cc222');
 
   // Declare a widget variable
   let widget: MainAreaWidget<HexEditorWidget>;
