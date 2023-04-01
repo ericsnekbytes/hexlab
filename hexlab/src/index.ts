@@ -598,13 +598,10 @@ class HexEditorWidget extends Widget {
         };
         if (cellIndex == 0) {
           cell.style['margin-left'] = '0';
-          cell.style['background-color'] = 'green';
-        }
-        if (cellIndex == rowItems.length - 1) {
-          cell.style['margin-right'] = '0';
+          cell.style['background-color'] = '#2fc900';
         }
         if (byteIndex == this.cursor) {
-          cell.style['background-color'] = 'pink';
+          cell.style['background-color'] = '#c200a8';
         }
 
         cell.innerText = charmap[left_hex] + charmap[right_hex];

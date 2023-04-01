@@ -5,32 +5,45 @@
 */
 
 .hexlab_root_widget {
+  --jp-hexlab-debug-border-width: 1px;
+  --jp-hexlab-root-border-width: var(--jp-hexlab-debug-border-width);
+  --jp-hexlab-ui-margin: 8px;
   width: 100%;
-  background-color: #bbbb55;
-  border: solid 8px yellow;
+  background-color: var(--jp-layout-color1);
+  font-family: var(--jp-ui-font-family);
+  color: var(--jp-ui-font-color0);
+  border: solid 1px red;
   margin: 0px;
   padding: 0px;
 }
 
 .hexlab_main_area {
-  width: calc(100% - 16px);
-  height: calc(100% - 16px);
-  background-color: #eeaa88;
-  border: solid 8px #cc7733;
+  width: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
+  height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
+  background-color: var(--jp-layout-color1);
+  border: solid 1px orange;
 }
 
 .hexlab_top_area {
-  width: calc(100% - 16px);
   display: flex;
+  margin: 0px;
   align-items: center;
-  border: solid 8px #cc88ee;
-  background-color: #cc77aa;
+  background-color: var(--jp-layout-color1);
+  border: solid;
+  border-bottom-width: var(--jp-border-width);
+  border-left-width: 0;
+  border-top-width: 0;
+  border-right-width: 0;
+  border-color: var(--jp-border-color2);
 }
 
 .hexlab_open_button {
-  height: 30px;
-  width: 150px;
-  margin: 8px;
+  --jp-hexlab-open-button-width: 150px;
+  --jp-hexlab-open-button-height: 30px;
+  --jp-hexlab-open-button-margin: var(--jp-hexlab-ui-margin);
+  height: var(--jp-hexlab-open-button-height);
+  width: var(--jp-hexlab-open-button-width);
+  margin: var(--jp-hexlab-ui-margin);
   padding-top: 9px;
   text-align: center;
   vertical-align: middle;
@@ -41,32 +54,30 @@
 
 .hexlab_file_label {
   margin: 8px;
-  color: #e6e6e6;
+  color: --jp-ui-inverse-font-color0;
 }
 
 .hexlab_workspace {
-  width: calc(100% - 16px);
-  height: calc(100% - 86px);
-  background-color: #44dd55;
-  color: #616161;
+  width: calc(100% +2px - calc(var(--jp-hexlab-root-border-width) - var(--jp-hexlab-open-button-height) - var(--jp-hexlab-open-button-margin)));
+  height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 60));
+  border: solid 1px yellow;
   border-radius: 2px;
-  border: solid 8px #66ee77;
   display: flex;
   align-items: start;
+  margin-left: 8px;
 }
 
 .hexlab_hex_grid {
-  width: calc(100% - 16px);
-  height: calc(100% - 16px);
-  color: #616161;
+  width: calc(100%);
+  height: calc(100% - 8px);
   border-radius: 2px;
-  border: solid 8px #737373;
-  background-color: #949494;
+  padding: 0px 0px 0px 8px;
+  background-color: var(--jp-layout-color2);
 }
 
 .hexlab_hex_row {
   height: 20px;
-  width: 100%;
+  width: calc(100%);
   margin: 0px 0px 8px 0px;
   display: flex;
   align-items: start;
@@ -80,8 +91,8 @@
   text-align: center;
   vertical-align: middle;
   border-radius: 2px;
-  background-color: #212121;
-  color: #e6e6e6;
+  background-color: var(--jp-layout-color3);
+  color: --jp-ui-font-color0;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -90,16 +101,11 @@
   display: none;
 }
 
-.hexlab_hex_content:last-child {
-  border-right-width: 1px;
-  border-color: red;
-}
-
 .hexlab_scrollbar {
   width: 12px;
   height: 100%;
   border-radius: 2px;
-  background-color: #212121;
+  background-color: var(--jp-layout-color1);
   display: inline-block;
   vertical-align: top;
   margin: 0;
