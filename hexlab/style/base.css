@@ -95,6 +95,7 @@
   color: --jp-ui-font-color0;
   overflow: hidden;
   flex-shrink: 0;
+  font-family: monospace;
 }
 
 .hexlab_root_container > input {

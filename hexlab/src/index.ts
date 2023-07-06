@@ -12,7 +12,7 @@ import {
 
 import { Widget } from '@lumino/widgets';
 
-import ResizeObserver from 'resize-observer-polyfill';
+//import ResizeObserver from 'resize-observer-polyfill';
 
 function getScrollbar() {
   let scrollbar = document.createElement('div');
@@ -431,7 +431,7 @@ class HexEditorWidget extends Widget {
     this.debugLog('[Hexlab] DESIREDGRIPPOS');
     this.debugLog(desiredGripPosition);
 
-    if (desiredGripPosition != NaN) {
+    if (!Number.isNaN(desiredGripPosition)) {
       this.scrollGrip.style.top = desiredGripPosition.toString() + 'px';
     } else {
       this.debugLog('[Hexlab] ERROR NaN grip pos');
