@@ -6,11 +6,11 @@ import {
 
 import {
   ICommandPalette,
-  MainAreaWidget,
+  // MainAreaWidget,
   WidgetTracker
 } from '@jupyterlab/apputils';
 
-import { Widget } from '@lumino/widgets';
+import { Panel, Widget } from '@lumino/widgets';
 
 //import ResizeObserver from 'resize-observer-polyfill';
 
@@ -735,7 +735,7 @@ function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILay
   console.log('[Hexlab] JupyterLab extension hexlab is activated!');
 
   // Declare a widget variable
-  let widget: MainAreaWidget<HexEditorWidget>;
+  let widget: Panel;
 
   // Add an application command
   const command: string = 'hexlab:open';
@@ -744,7 +744,8 @@ function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILay
     execute: () => {
       if (!widget || widget.isDisposed) {
         const content = new HexEditorWidget();
-        widget = new MainAreaWidget({content});
+        widget = new Panel();
+        widget.addWidget(content);
         widget.id = 'hexlab';
         widget.title.label = 'Hex Editor';
         widget.title.closable = true;
@@ -755,7 +756,7 @@ function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILay
       }
       if (!widget.isAttached) {
         // Attach the widget to the main work area if it's not there
-        app.shell.add(widget, 'main');
+        app.shell.add(widget, 'right');
       }
 
       // Activate the widget
@@ -767,7 +768,7 @@ function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILay
   palette.addItem({ command, category: 'Tutorial' });
 
   // Track and restore the widget state
-  let tracker = new WidgetTracker<MainAreaWidget<HexEditorWidget>>({
+  let tracker = new WidgetTracker<Panel>({
     namespace: 'hexlab'
   });
   if (restorer) {
