@@ -299,6 +299,8 @@ class HexEditorWidget extends Widget {
     super();
 
     this.manager = new HexManager();
+    this.manager.fileOpenSuccess.connect(this.handleFileLoadSuccess.bind(this));
+    this.manager.fileOpenFailure.connect(this.resetGridView.bind(this));
 
     // Add styling and build layout tree
     this.node.classList.add('hexlab_root_widget');
