@@ -588,7 +588,7 @@ class HexEditorWidget extends Widget {
     // (scrolling by full rows only)
     let minDelta = this.manager.getMaxCellCountClamped();
     let lastScrollPosition = this.manager.getLastDataStartPosition();
-    // this.printBasicDiagnosticInfo();
+    this.printBasicDiagnosticInfo();
 
     // Check for up/down movement and respond accordingly
     if (event.deltaY < 0) {
@@ -601,21 +601,24 @@ class HexEditorWidget extends Widget {
       this.manager.position = this.manager.getClosestRowStartForPosition(this.manager.position);
       this.debugLog('[Hexlab] ERROR bad start position on wheel event');
     }
-    // this.printBasicDiagnosticInfo();
+    this.printBasicDiagnosticInfo();
 
     // Check the cursor
     let range = this.manager.getPageByteRangeInclusive();
+    this.debugLog('[HexLab] CURSOR RANGE CHECK ' + range)
     // If it's not inside the page, put it back inside
     if (!(this.manager.cursor >= range[0] && this.manager.cursor <= range[1])) {
       this.debugLog('[Hexlab]   cursor outside');
       if (event.deltaY < 0) {
         this.debugLog('[Hexlab]   subtract from cursor pos');
-        this.manager.cursor -= this.manager.maxCellCount;
-        this.manager.cursor = this.manager.cursor;
+        this.debugLog('[HexLab] 1BEFORE ' + this.manager.cursor)
+        this.manager.cursor = this.manager.cursor - minDelta;
+        this.debugLog('[HexLab] 1AFTER ' + this.manager.cursor)
       } else {
         this.debugLog('[Hexlab]   add to cursor pos');
-        this.manager.cursor += this.manager.maxCellCount;
-        this.manager.cursor = this.manager.cursor;
+        this.debugLog('[HexLab] 2BEFORE ' + this.manager.cursor)
+        this.manager.cursor = this.manager.cursor + minDelta;
+        this.debugLog('[HexLab] 2AFTER ' + this.manager.cursor)
       }
     }
 
@@ -717,6 +720,7 @@ class HexEditorWidget extends Widget {
   }
 
   printBasicDiagnosticInfo() {
+    this.debugLog('');
     this.debugLog('[Hexlab]   -------- Diagnostic Info --------');
     this.debugLog('[Hexlab]     FileName: ' + this.manager.currentFilename);
     this.debugLog('[Hexlab]     FileSize: ' + this.manager.currentFileSize);
@@ -737,6 +741,7 @@ class HexEditorWidget extends Widget {
     this.debugLog('[Hexlab]     gripMax: ' + this.scrollbar.getMaxGripScroll());
     this.debugLog('[Hexlab]     gripRange: ' + this.getGripScrollRange());
     this.debugLog('[Hexlab]   ------ End Diagnostic Info ------');
+    this.debugLog('');
   }
 
   handleScrollGripDragStart(event: any) {
@@ -968,7 +973,7 @@ class HexEditorWidget extends Widget {
 
     // Add cells to each row until the file end is reached
     for (let rowCount = 0; rowCount < rowElements.length; rowCount++) {
-      this.debugLog('[Hexlab] -- Row Start @ '+ rowCount);
+      // this.debugLog('[Hexlab] -- Row Start @ '+ rowCount);
       for (let cellPosition = 0; cellPosition < maxCellCountClamped; cellPosition++) {
         let currentRow = rowElements[rowCount];
 
@@ -990,12 +995,12 @@ class HexEditorWidget extends Widget {
 
           // Do any cell post processing here
           if (cellPosition == maxCellCountClamped - 1 || bytePosition == this.manager.fileSize - 1) {
-            this.debugLog('[Hexlab] last cell in row at ' + bytePosition);
+            // this.debugLog('[Hexlab] last cell in row at ' + bytePosition);
             hexCell.style['background-color'] = 'red';
             hexCell.style['margin-right'] = '0px';
           }
           if (bytePosition == this.manager.fileSize - 1) {
-            this.debugLog('[Hexlab] Last file byte! ' + bytePosition);
+            // this.debugLog('[Hexlab] Last file byte! ' + bytePosition);
             hexCell.style['background-color'] = 'blue';
           }
 
