@@ -44,6 +44,7 @@
   --jp-hexlab-open-button-margin: var(--jp-hexlab-ui-margin);
   height: var(--jp-hexlab-open-button-height);
   width: var(--jp-hexlab-open-button-width);
+  min-width: var(--jp-hexlab-open-button-width);
   margin: var(--jp-hexlab-ui-margin);
   padding-top: 9px;
   text-align: center;
@@ -56,6 +57,8 @@
 .hexlab_file_label {
   margin: 8px;
   color: --jp-ui-inverse-font-color0;
+  text-wrap: nowrap;
+  text-overflow: clip;
 }
 
 .hexlab_workspace {

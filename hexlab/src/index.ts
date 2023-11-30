@@ -45,8 +45,8 @@ class HexManager {
   // events (Where am I in the data now since the page changed?
   // Oh, there's the cursor, where I was previously...)
   _cursor: number = 0;
-  _maxCellCount: number = 0;
-  _maxRowCount: number = 0;
+  private _maxCellCount: number = 0;
+  private _maxRowCount: number = 0;
 
   static STATUS_OKAY = 0;
   static STATUS_FAIL = 1;
@@ -104,8 +104,14 @@ class HexManager {
     this._maxRowCount = 0;
   }
 
+  // Stores raw cells-per-width (can be zero)
   set maxCellCount(count: number) {
     this._maxCellCount = count;
+  }
+
+  // Stores raw rows-per-height (can be zero)
+  set maxRowCount(count: number) {
+    this._maxRowCount = count;
   }
 
   getMaxCellCountClamped() {
@@ -284,7 +290,7 @@ class HexEditorWidget extends Widget {
   topArea: HTMLElement;
   openButton: any;
   openInputHidden: any;
-  fileLabel: any;
+  fileLabel: HTMLElement;
   hexGrid: HTMLElement;
   scrollbar: HexScrollBar;
   scrollGrip: any;
@@ -416,11 +422,19 @@ class HexEditorWidget extends Widget {
 
   handleFileLoadSuccess() {
     // Success, repopulate display
+    this.debugLog('******** Handle file load success ********');
+    this.debugLog(this.manager.getCurrentFilename());
+    this.debugLog(this.fileLabel);
+    this.debugLog(document.body.contains(this.fileLabel));
+    this.debugLog(this.fileLabel.innerText);
     this.fileLabel.innerText = 'File: ' + this.manager.getCurrentFilename();
+    this.debugLog(this.fileLabel.innerText);
+    this.debugLog(this.fileLabel.classList);
+    this.debugLog(this.fileLabel.innerHTML);
     this.configureAndFillGrid();
   }
 
-  maxCellCount() {
+  cellsPerWidth() {
     // Gets raw how-many-cells-fit-in-this-page-width value
     // (doesn't impose any minimums etc, just gives cells per width)
     let CELLROWMARGIN = 8;  // TODO refactor these values
@@ -436,7 +450,7 @@ class HexEditorWidget extends Widget {
     )
   }
 
-  maxRowCount() {
+  rowsPerHeight() {
     // Gets raw how-many-row-fit-in-this-page-height value
     // (doesn't impose any minimums etc, just gives rows per height)
     let CELLROWMARGIN = 8;
@@ -628,10 +642,10 @@ class HexEditorWidget extends Widget {
     this.debugLog('[Hexlab]     closestToCursor: ' + this.manager.getClosestRowStartForPosition(this.manager.cursor));
     this.debugLog('[Hexlab]     pageByteRange: ' + this.manager.getPageByteRangeInclusive());
     this.debugLog('[Hexlab]     positionValid: ' + this.manager.isValidRowStartPosition(this.manager.currentPosition));
-    this.debugLog('[Hexlab]     positionMultiple: ' + (this.manager.currentPosition % this.maxCellCount() == 0));
+    this.debugLog('[Hexlab]     positionMultiple: ' + (this.manager.currentPosition % this.manager.getMaxCellCountClamped() == 0));
     this.debugLog('[Hexlab]   --------');
-    this.debugLog('[Hexlab]     maxCellCount: ' + this.manager.maxCellCount);
-    this.debugLog('[Hexlab]     maxRowCount: ' + this.maxRowCount());
+    this.debugLog('[Hexlab]     maxCellCount: ' + this.manager.getMaxCellCountClamped());
+    this.debugLog('[Hexlab]     maxRowCount: ' + this.manager.getMaxRowCountClamped());
     this.debugLog('[Hexlab]   --------');
     this.debugLog('[Hexlab]     scrollbarPosition: ' + this.scrollbar.node.style.top);
     this.debugLog('[Hexlab]     scrollbarHeight: ' + this.scrollbar.node.style.height);
@@ -718,8 +732,10 @@ class HexEditorWidget extends Widget {
       return;
     }
 
+    // Determine how many cells will fit in a row (show a min of 1)
     let maxCellCountClamped = this.manager.getMaxCellCountClamped();
 
+    // Iterate over row/cell containers and populate with data
     let rowItems = this.hexGrid.children;
     for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
       let hexRow = rowItems[rowIndex];
@@ -768,10 +784,19 @@ class HexEditorWidget extends Widget {
       }
     }
 
-    this.alignScrollGripPositionToData();
+    // TODO Remove/refactor
+    // this.alignScrollGripPositionToData();
   }
 
-  buildAndPopulateGrid() {
+  // The cell grid holds row containers and cells containers that
+  // hold the user's hex data, which are constructed here based on
+  // the root container's width. Cells don't actually scroll in
+  // the typical sense: They are containers that hold appropriate
+  // data for the given view position, so as users scroll the
+  // data inside each cell is overwritten (giving the appearance
+  // of scrolling). In reality, the grid holds a viewport sized
+  // amount of cells/rows at all times.
+  configureGrid() {
     this.debugLog('[Hexlab] ******** Configure Grid ********');
 
     // Do nothing for empty files
@@ -779,33 +804,42 @@ class HexEditorWidget extends Widget {
       return;
     }
 
-    // Clear the current grid of child rows/cells
-    this.resetGridView();
+    // Make the manager aware of the grid space
+    this.manager.maxCellCount = this.cellsPerWidth();
+    this.manager.maxRowCount = this.rowsPerHeight();
 
     // Show some basic stats
     this.printBasicDiagnosticInfo();
 
-    // Fix the current position (if it's not a multiple of
-    // the current max cell count, make it one)...we use the
-    // closest position to the cursor to attempt to keep the
-    // same place on screen/in-page during hex cell reflow
-    let range = this.manager.getPageByteRangeInclusive();
-    let cursorInvalid = !(this.manager.cursor >= range[0] && this.manager.cursor <= range[1]);
-    if (!this.manager.isValidRowStartPosition(this.manager.position) || cursorInvalid) {
-      this.debugLog('[Hexlab] CLOSEST ROW FIX');
-      this.debugLog('[Hexlab]   CURSOR STATS');
-      this.debugLog(this.manager.cursor);
-      this.debugLog(this.manager.getClosestRowStartForPosition(this.manager.cursor));
-      let desiredPosition = this.manager.getClosestRowStartForPosition(this.manager.cursor);
-      this.manager.position = desiredPosition;
-    }
+    // TODO fix this/refactor
+    // // Fix the current position (if it's not a multiple of
+    // // the current max cell count, make it one)...we use the
+    // // closest position to the cursor to attempt to keep the
+    // // same place on screen/in-page during hex cell reflow
+    // let range = this.manager.getPageByteRangeInclusive();
+    // let cursorInvalid = !(this.manager.cursor >= range[0] && this.manager.cursor <= range[1]);
+    // if (!this.manager.isValidRowStartPosition(this.manager.position) || cursorInvalid) {
+    //   this.debugLog('[Hexlab] CLOSEST ROW FIX');
+    //   this.debugLog('[Hexlab]   CURSOR STATS');
+    //   this.debugLog(this.manager.cursor);
+    //   this.debugLog(this.manager.getClosestRowStartForPosition(this.manager.cursor));
+    //   let desiredPosition = this.manager.getClosestRowStartForPosition(this.manager.cursor);
+    //   this.manager.position = desiredPosition;
+    // }
 
-    // Get theoretical max cell/row count for this page size.
-    // If the file is non-empty, but the page is too
-    // small to show even a single row/column, show
-    // a single row/column/cell anyway and let it overflow
+    // Determine how many row/cell containers will theoretically fit
+    // within the page. Note that the user's data may only fill a portion
+    // of the theoretical max container count. Also note that, regardless
+    // of how skinny or short the page is, these values are clamped to always
+    // give at least 1 row and 1 cell (which will clip in extreme cases).
     let maxCellCountClamped = this.manager.getMaxCellCountClamped();
-    let maxRowCountClamped = this.manager.getMaxRowCountClamped;
+    let maxRowCountClamped = this.manager.getMaxRowCountClamped();
+
+    // Get the range of valid data indices that could fit on the page
+    // for the given data position (note that we may not have enough
+    // data indices to fill the theoretical max cell count/page size
+    // if we're near the end of the user's file)
+    let range = this.manager.getPageByteRangeInclusive();
 
     // Make rows until the file end is reached
     let rowElements: any = [];
@@ -823,6 +857,9 @@ class HexEditorWidget extends Widget {
       rowElements.push(hexRow);
       this.debugLog('[Hexlab] Add row for start byte: ' + rowStartPos);
 
+      // The data position at the start of the row is checked to determine
+      // whether a new row is needed. Increment the row's data start position
+      // by the max cell count (ie 1 row) to determine if another row is needed.
       rowStartPos += maxCellCountClamped;
     }
     this.debugLog('[Hexlab] Actual rows created: ' + rowElements.length);
@@ -836,10 +873,11 @@ class HexEditorWidget extends Widget {
       for (let cellPosition = 0; cellPosition < maxCellCountClamped; cellPosition++) {
         let currentRow = rowElements[rowCount];
 
-        // Get the position of the hex cell we're going to make
+        // Get the data position of the hex cell we're going to make (the
+        // byte this cell is going to display)
         let bytePosition = this.manager.position + (maxCellCountClamped * rowCount) + cellPosition;
-//        this.debugLog('[Hexlab] BytePosition');
-//        this.debugLog(bytePosition);
+      //  this.debugLog('[Hexlab] BytePosition');
+      //  this.debugLog(bytePosition);
 
         // Add a cell if the position is valid (not past file size bounds)
         if (bytePosition < this.manager.fileSize) {
@@ -867,19 +905,18 @@ class HexEditorWidget extends Widget {
           currentRow.appendChild(hexCell);
         }
         else {
-          this.debugLog('[Hexlab] BREAK on byteposition ' + bytePosition);
+          this.debugLog('[Hexlab] STOP cell build before byteposition ' + bytePosition);
           break;
         }
       }
     }
-
-    this.fillGrid();
   }
 
   configureAndFillGrid() {
     // TODO refactor this
     this.lastGridFillTimestamp = new Date();
-    this.buildAndPopulateGrid();
+    this.configureGrid();
+    this.fillGrid();
   }
 }
 
