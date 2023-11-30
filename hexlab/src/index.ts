@@ -1,5 +1,8 @@
+import { INotebookShell } from '@jupyter-notebook/application';
+
 import {
   ILayoutRestorer,
+  ILabShell,
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
@@ -965,7 +968,8 @@ class HexEditorWidget extends Widget {
 /**
 * Activate the hexlab widget extension.
 */
-function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null) {
+function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null,
+                  labshell: ILabShell | null, nbshell: INotebookShell | null) {
   console.log('[Hexlab] JupyterLab extension hexlab is activated!');
 
   // Declare a widget variable
@@ -990,7 +994,11 @@ function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILay
       }
       if (!widget.isAttached) {
         // Attach the widget to the main work area if it's not there
-        app.shell.add(widget, 'right');
+        if (nbshell) {
+          app.shell.add(widget, 'right');
+        } else {
+          app.shell.add(widget, 'main');
+        }
       }
 
       // Activate the widget
@@ -1020,7 +1028,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'hexlab:plugin',
   autoStart: true,
   requires: [ICommandPalette],
-  optional: [ILayoutRestorer],
+  optional: [ILayoutRestorer, ILabShell, INotebookShell],
   activate: activate,
 };
 
