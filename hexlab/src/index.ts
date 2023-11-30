@@ -295,6 +295,8 @@ class HexScrollBar {
   scrollGrip: HTMLElement;
   // byteRange: any;
   // maxCellCountClamped: Number;
+  GRIP_EDGE_SIZE = 8;
+  GRIP_MARGIN = 2;
   manager: any;
   DEBUG = true;
 
@@ -326,11 +328,18 @@ class HexScrollBar {
   // }
 
   getMinGripScroll() {
-    // Grip position setting uses the top of the grip rect,
-    // so we only need to leave space for the grip margin
-    let GRIP_MARGIN = 2;  // TODO refactor/deduplicate
 
-    let minScrollInScrollbarRelativeCoords = GRIP_MARGIN;
+    // TODO switched to grip with margin with relative positioning,
+    // so the top of the grip/min grip position should be 0 (0 means
+    // relative to its position in normal flow, which would already
+    // be offset from the scrollbar/parent because of the margin)
+
+    // TODO remove this comment, refactor
+    // // Grip position setting uses the top of the grip rect,
+    // // so we only need to leave space for the grip margin
+    // let GRIP_MARGIN = 2;  // TODO refactor/deduplicate
+
+    let minScrollInScrollbarRelativeCoords = 0;
     return minScrollInScrollbarRelativeCoords;
   }
 
@@ -343,10 +352,7 @@ class HexScrollBar {
 
     let scrollHeight = scrollbarRect.height;
 
-    let GRIP_EDGE_SIZE = 8;
-    let GRIP_MARGIN = 2;
-
-    let maxScrollInScrollbarRelativeCoords = scrollHeight - GRIP_EDGE_SIZE - GRIP_MARGIN;
+    let maxScrollInScrollbarRelativeCoords = scrollHeight - this.GRIP_EDGE_SIZE - this.GRIP_MARGIN;
     return maxScrollInScrollbarRelativeCoords;
   }
 

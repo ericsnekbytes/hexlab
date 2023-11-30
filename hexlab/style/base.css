@@ -122,9 +122,10 @@
   width: 8px;
   height: 8px;
   border-radius: 8px;
+  margin: 2px;
   background-color: #22ff22;
   position: relative;
-  top: 2px;
-  left: 2px;
+  /* top: 2px;
+  left: 2px; */
   user-select: none;
 }
