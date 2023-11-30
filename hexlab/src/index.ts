@@ -143,6 +143,10 @@ class HexManager {
     return [min, max]
   }
 
+  getLastByteIndex() {
+    return this.getFileByteRangeInclusive()[1];
+  }
+
   getPageByteRangeInclusive() {
     // Gets min/max POSITIONS (indices) of bytes on the page
     // (if there's a partial row, end should be last byte index)
@@ -323,21 +327,12 @@ class HexScrollBar {
     return this.scrollGrip;
   }
 
-  // setByteRangeInclusive(min: Number, max: Number) {
-  //   this.byteRange = [min, max];
-  // }
-
   getMinGripScroll() {
 
     // TODO switched to grip with margin with relative positioning,
     // so the top of the grip/min grip position should be 0 (0 means
     // relative to its position in normal flow, which would already
     // be offset from the scrollbar/parent because of the margin)
-
-    // TODO remove this comment, refactor
-    // // Grip position setting uses the top of the grip rect,
-    // // so we only need to leave space for the grip margin
-    // let GRIP_MARGIN = 2;  // TODO refactor/deduplicate
 
     let minScrollInScrollbarRelativeCoords = 0;
     return minScrollInScrollbarRelativeCoords;
@@ -503,14 +498,14 @@ class HexEditorWidget extends Widget {
     this.hexGrid.classList.add('--jp-code-font-family');
     this.hexGrid.classList.add('--jp-code-font-size');
 
-    // TODO Finish this
-    // Data scrolling is handled manually via this scrollbar
-    // (this is not true scrolling of a long element with overflow,
-    // it only tracks the position in the hex data and uses the
-    // scrollGrip to control how the hex grid is populated...the
-    // hexgrid itself will never be populated such that it overflows
-    // its parent container, it shows only a page that fits within
-    // its parent, which should track the size of the window)
+    // Data scrolling is handled manually via this scrollbar.
+    // This is not "true" scrolling (of a long element with overflow),
+    // the scrollbar only tracks a position in the user's data, where
+    // the (currently viewed) page starts (indicated by the position
+    // of the scroll grip). The data position drives cell population
+    // on the page. The hexgrid itself will never be populated such
+    // that it overflows its parent container, it shows only the page/
+    // slice of data that's currently being viewed.
     this.scrollbar = new HexScrollBar(this.manager);
     this.scrollGrip = this.scrollbar.grip;  // TODO refactor access
     this.boundListener = this.handleScrollGripDragMove.bind(this)
@@ -551,15 +546,6 @@ class HexEditorWidget extends Widget {
     this.scrollbar.setGripPosition(this.scrollbar.getMinGripScroll());
     this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
   }
-
-  // resetGridView() {
-  //   // Clear/empty current hex grid
-  //   this.hexGrid.innerText = '';
-
-  //   this.scrollbar.node.style.top = this.scrollbar.getMinGripScroll().toString() + 'px';
-  //   this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
-  //   this.scrollbar.setByteRangeInclusive(0, 0);
-  // }
 
   async startFileLoad() {
     console.log('[HexLab] ******** Opening File ********');
@@ -736,46 +722,16 @@ class HexEditorWidget extends Widget {
       this.debugLog('[Hexlab]   NEWGRIP');
       this.debugLog(newGripPosition);
 
-      // let dataPositionAsPercent = clampedPosition / this.getGripScrollRange();
-      // this.debugLog('[Hexlab]   DATAPERCENTx');
-      // this.debugLog(dataPositionAsPercent);
-      // let rawBytePos = (dataPositionAsPercent * this.manager.fileSize) % this.manager.fileSize;
-      // let rowIndexForPosition = Math.min(this.manager.getLastDataStartPosition(), Math.floor(rawBytePos / this.manager.maxCellCount));
-      // let rowStartByteIndexForPosition = Math.floor(rowIndexForPosition * this.manager.maxCellCount);
-      // let clampedRowStartPosition = Math.max(0, Math.min(this.manager.getLastDataStartPosition(), rowStartByteIndexForPosition));
-
-      // this.debugLog('[Hexlab]   rawBytePos');
-      // this.debugLog(rawBytePos);
-      // this.debugLog('[Hexlab]   clamped row start');
-      // this.debugLog(clampedRowStartPosition);
-
       // Set the data position
       let closestDataPosition = this.scrollbar.setDragPosition(newGripPosition);
       this.manager.position = closestDataPosition;
       this.manager.dragCursor()
 
-      // this.manager.position = clampedRowStartPosition;
-      // if (newGripPosition <= this.scrollbar.getMinGripScroll()) {
-      //   // A grip top pos, go to byte 0
-      //   this.manager.position = 0;
-      // } else if (newGripPosition >= this.scrollbar.getMaxGripScroll()) {
-      //   // A grip bottom pos, go to last data position (last row start)
-      //   this.manager.position = this.manager.getLastDataStartPosition();
-      // }
-      // let range = this.manager.getPageByteRangeInclusive();
-      // if (!(this.manager.position >= range[0] && this.manager.position <= range[1])) {
-      //   // TODO this should do a vertical cursor move instead probably?
-      //   this.manager.cursor = range[0];
-      // }
-
-      // Throttle the grid fill op to once per 100 milliseconds
+      // Throttle the grid fill op to once per X milliseconds
       let now: any = new Date();
-      if ((now - this.lastGridFillTimestamp) > 100) {
+      if ((now - this.lastGridFillTimestamp) > 50) {
         this.configureAndFillGrid();
       }
-
-      // // Set the grip position
-      // this.scrollGrip.style.top = newGripPosition.toString() + 'px';
     }
     if (event.type == 'mouseup') {
       this.debugLog('[Hexlab] -- mouseUp found! --')
@@ -823,76 +779,6 @@ class HexEditorWidget extends Widget {
       this.debugLog('[Hexlab] Attached!');
     }
   }
-
-  // alignScrollGripPositionToData() {
-  //   ('[Hexlab] ******** Set scroll grip position ********')
-  //   // Match scrollbar position to the current data position
-  //   // (used after a wheelevent to sync the scrollbar to the new data position)
-  //   this.printBasicDiagnosticInfo();
-
-  //   if (this.manager.position == this.manager.getLastDataStartPosition()) {
-  //     this.scrollGrip.style.top = this.scrollbar.getMaxGripScroll().toString() + 'px';
-  //     return;
-  //   }
-  //   if (this.manager.position == 0) {
-  //     this.scrollGrip.style.top = this.scrollbar.getMinGripScroll().toString() + 'px';
-  //     return;
-  //   }
-
-  //   let barPositionPercentOfMax = (this.manager.position / this.manager.fileSize);
-  //   this.debugLog('[Hexlab] CUIRRENTPOS');
-  //   this.debugLog(this.manager.position);
-  //   this.debugLog('[Hexlab] FSIZE');
-  //   this.debugLog(this.manager.fileSize);
-  //   this.debugLog('[Hexlab] PERCENT as decimal');
-  //   this.debugLog(barPositionPercentOfMax);
-  //   this.debugLog('[Hexlab] MAXGRIPSC');
-  //   this.debugLog(this.scrollbar.getMaxGripScroll());
-  //   let desiredGripPositionRaw = barPositionPercentOfMax * (this.scrollbar.getMaxGripScroll() - this.scrollbar.getMinGripScroll());
-  //   this.debugLog('[Hexlab] GRIP RAWx');
-  //   this.debugLog(desiredGripPositionRaw);
-  //   let desiredGripPosition = Math.max(
-  //     Math.min(this.scrollbar.getMaxGripScroll(), desiredGripPositionRaw),
-  //     this.scrollbar.getMinGripScroll()
-  //   )
-
-  //   this.debugLog('[Hexlab] DESIREDGRIPPOS');
-  //   this.debugLog(desiredGripPosition);
-
-  //   if (!Number.isNaN(desiredGripPosition)) {
-  //     this.scrollGrip.style.top = desiredGripPosition.toString() + 'px';
-  //   } else {
-  //     this.debugLog('[Hexlab] ERROR NaN grip pos');
-  //   }
-  // }
-
-  getLastByteIndex() {
-    if (this.fileSizeNonZero()) {
-      return this.manager.fileSize - 1;
-    }
-    return 0;
-  }
-
-  fileSizeNonZero() {
-    // TODO refactor into hex manager
-    if (this.manager.fileSize < 1) {
-      return false;
-    }
-    return true;
-  }
-
-  // // Keep grid containers, just clear the byte/data values inside the cells
-  // wipeCellValues() {
-  //   let rowItems = this.hexGrid.children;
-  //   for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
-  //     let hexRow = rowItems[rowIndex];
-
-  //     for (let cellIndex = 0; cellIndex < hexRow.children.length; cellIndex++) {  // TODO does a whitespace node show up here?
-  //       let cell: any = hexRow.children[cellIndex];
-  //       cell.innerText = '';
-  //     }
-  //   }
-  // }
 
   fillGrid() {
     // Fill the cell grid with user byte content
@@ -984,22 +870,6 @@ class HexEditorWidget extends Widget {
 
     // Show some basic stats
     this.printBasicDiagnosticInfo();
-
-    // TODO fix this/refactor
-    // // Fix the current position (if it's not a multiple of
-    // // the current max cell count, make it one)...we use the
-    // // closest position to the cursor to attempt to keep the
-    // // same place on screen/in-page during hex cell reflow
-    // let range = this.manager.getPageByteRangeInclusive();
-    // let cursorInvalid = !(this.manager.cursor >= range[0] && this.manager.cursor <= range[1]);
-    // if (!this.manager.isValidRowStartPosition(this.manager.position) || cursorInvalid) {
-    //   this.debugLog('[Hexlab] CLOSEST ROW FIX');
-    //   this.debugLog('[Hexlab]   CURSOR STATS');
-    //   this.debugLog(this.manager.cursor);
-    //   this.debugLog(this.manager.getClosestRowStartForPosition(this.manager.cursor));
-    //   let desiredPosition = this.manager.getClosestRowStartForPosition(this.manager.cursor);
-    //   this.manager.position = desiredPosition;
-    // }
 
     // Determine how many row/cell containers will theoretically fit
     // within the page. Note that the user's data may only fill a portion
