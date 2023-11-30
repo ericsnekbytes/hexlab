@@ -701,8 +701,9 @@ class HexEditorWidget extends Widget {
       // this.debugLog('[Hexlab]   clamped row start');
       // this.debugLog(clampedRowStartPosition);
 
-      // Set the data position  // TODO stop using snake case
-      this.scrollbar.setDragPosition(newGripPosition);
+      // Set the data position
+      let closestDataPosition = this.scrollbar.setDragPosition(newGripPosition);
+      this.manager.position = closestDataPosition;
       this.manager.dragCursor()
 
       // this.manager.position = clampedRowStartPosition;
