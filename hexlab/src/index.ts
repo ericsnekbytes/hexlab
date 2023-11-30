@@ -71,8 +71,10 @@ class HexManager {
     return this._cursor;
   }
 
-  set cursor(value: number) {
-    this._cursor = value;
+  // The cursor is a position (index) in the user data
+  set cursor(position: number) {
+    this._cursor = Math.max(0, Math.min(this.fileSize, position));
+    
   }
 
   get fileSize() {
@@ -84,7 +86,7 @@ class HexManager {
   }
 
   set position(position: number) {
-    this.currentPosition = position;
+    this.currentPosition = Math.max(0, Math.min(this.fileSize, position));
   }
 
   byte(position: number) {
@@ -130,6 +132,12 @@ class HexManager {
     return maxRowCountClamped;
   }
 
+  getFileByteRangeInclusive() {
+    let min = 0;
+    let max = Math.max(0, this.fileSize - 1)
+    return [min, max]
+  }
+
   getPageByteRangeInclusive() {
     // Gets min/max POSITIONS (indices) of bytes on the page
     // (if there's a partial row, end should be last byte index)
@@ -163,8 +171,29 @@ class HexManager {
     return false;
   }
 
+  // Get total number of rows needed (including any partial row), clamped
+  getTotalRowsNeeded() {
+    return Math.ceil(this.currentFileSize / this.getMaxCellCountClamped());
+  }
+
   getLastDataStartPosition() {
-    // The last data position users can scroll to (last row start)
+    // The last data position users can scroll to (last row start).
+    // 
+    // Cell population begins at the top left starting at user data
+    // index 0, and a row fills up when the max cell **count** is hit
+    // (the last **position** in that row is max cell count - 1).
+    // This means that the start of a new row will always indicate a
+    // **position** that is a multiple of the max cell **count** for
+    // the given page width.
+    //
+    // In other words, many positions in the data are not valid row
+    // start positions for a given page width, and only show up in the
+    // later cells in the row, because they're not multiples of the
+    // max cell count for that page width.
+    //
+    // When the page width changes, user data must reflow to adjust
+    // to the new max cell count for the new page width (much like
+    // text is reflowed when a document changes its width).
 
     // Return for empty files
     if (this.currentFileSize < 1) {
@@ -248,8 +277,11 @@ class HexScrollBar {
   scrollGrip: HTMLElement;
   byteRange: any;
   maxCellCountClamped: Number;
+  manager: any;
 
-  constructor() {
+  constructor(manager: any) {
+    this.manager = manager;
+
     this.byteRange = [0, 0];
     this.maxCellCountClamped = 0;
 
@@ -277,6 +309,65 @@ class HexScrollBar {
 
   setMaxCellCount(count: Number) {
     this.maxCellCountClamped = count;
+  }
+
+  getMinGripScroll() {
+    // Grip position setting uses the top of the grip rect,
+    // so we only need to leave space for the grip margin
+    let GRIP_MARGIN = 2;  // TODO refactor/deducplicate
+
+    let minScrollInScrollbarRelativeCoords = GRIP_MARGIN;
+    return minScrollInScrollbarRelativeCoords;
+  }
+
+  getMaxGripScroll() {
+    // Grip position setting uses the top of the grip rect,
+    // so we need to leave space for the whole grip circle +
+    // the grip margin at the bottom so it doesn't overflow
+    // the scrollbar
+    let scrollbarRect = this.scrollBar.getBoundingClientRect();
+
+    let scrollHeight = scrollbarRect.height;
+
+    let GRIP_EDGE_SIZE = 8;
+    let GRIP_MARGIN = 2;
+
+    let maxScrollInScrollbarRelativeCoords = scrollHeight - GRIP_EDGE_SIZE - GRIP_MARGIN;
+    return maxScrollInScrollbarRelativeCoords;
+  }
+
+  getValidGripPositionRange() {
+    return [this.getMinGripScroll(), this.getMaxGripScroll()];
+  }
+
+  getAllValidPixelPositions(){
+    let range = this.getValidGripPositionRange();
+    let total_pixel_positions = range[0] - range[1];
+    return total_pixel_positions;
+  }
+
+  // Set scroll grip visual position to match a given data position/progress
+  setPosition(user_data_position: number) {
+    // Count how many data rows there will be, and our progress through the
+    // total row count (scrollbar will always represent a row start position)
+    let total_row_count = this.manager.getTotalRowsNeeded();
+    let current_row_count = Math.floor(user_data_position / total_row_count);
+
+    let closest_grip_pixel_position = (
+      Math.round(1.0 * current_row_count / total_row_count * this.getMaxGripScroll())
+    );
+    this.scrollGrip.style.top = closest_grip_pixel_position.toString() + 'px';
+  }
+
+  // Set the grip position based on a grip drag event, return
+  // the data position corresponding to that scroll grip pixel position
+  setDragPosition(position: number): number {
+    this.scrollGrip.style.top = position.toString() + 'px';
+
+    let total_row_count = this.manager.getTotalRowsNeeded();
+    let gripPositionAsPercent = position * 1.0 / this.getMaxGripScroll();
+
+    return Math.round(total_row_count * gripPositionAsPercent) * this.manager.getMaxCellCountClamped();
   }
 }
 
@@ -365,7 +456,7 @@ class HexEditorWidget extends Widget {
     // hexgrid itself will never be populated such that it overflows
     // its parent container, it shows only a page that fits within
     // its parent, which should track the size of the window)
-    this.scrollbar = new HexScrollBar();
+    this.scrollbar = new HexScrollBar(this.manager);
     this.scrollGrip = this.scrollbar.grip;  // TODO refactor access
     this.boundListener = this.handleScrollGripDragMove.bind(this)
     this.scrollGrip.addEventListener('mousedown', this.handleScrollGripDragStart.bind(this));
@@ -396,7 +487,7 @@ class HexEditorWidget extends Widget {
     // Clear/empty current hex grid
     this.hexGrid.innerText = '';
 
-    this.scrollbar.node.style.top = this.getMinGripScroll().toString() + 'px';
+    this.scrollbar.node.style.top = this.scrollbar.getMinGripScroll().toString() + 'px';
     this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
     this.scrollbar.setByteRangeInclusive(0, 0);
   }
@@ -421,16 +512,16 @@ class HexEditorWidget extends Widget {
   }
 
   handleFileLoadSuccess() {
-    // Success, repopulate display
+    // Success, repopulate the view
     this.debugLog('******** Handle file load success ********');
-    this.debugLog(this.manager.getCurrentFilename());
-    this.debugLog(this.fileLabel);
-    this.debugLog(document.body.contains(this.fileLabel));
-    this.debugLog(this.fileLabel.innerText);
+
+    // Set the filename display
     this.fileLabel.innerText = 'File: ' + this.manager.getCurrentFilename();
-    this.debugLog(this.fileLabel.innerText);
-    this.debugLog(this.fileLabel.classList);
-    this.debugLog(this.fileLabel.innerHTML);
+    // Set the scrollbar range (to match min/max byte indices)
+    let file_byte_range = this.manager.getFileByteRangeInclusive();
+    this.scrollbar.setByteRangeInclusive(file_byte_range[0], file_byte_range[1]);
+    this.scrollbar.setMaxCellCount(this.manager.getMaxCellCountClamped());
+    // Rebuild and populate grid
     this.configureAndFillGrid();
   }
 
@@ -468,34 +559,9 @@ class HexEditorWidget extends Widget {
     return maxRows;
   }
 
-  getMinGripScroll() {
-    // Grip position setting uses the top of the grip rect,
-    // so we only need to leave space for the grip margin
-    let GRIP_MARGIN = 2;
-
-    let minScrollInScrollbarRelativeCoords = GRIP_MARGIN;
-    return minScrollInScrollbarRelativeCoords;
-  }
-
-  getMaxGripScroll() {
-    // Grip position setting uses the top of the grip rect,
-    // so we need to leave space for the whole grip circle +
-    // the grip margin at the bottom so it doesn't overflow
-    // the scrollbar
-    let scrollbarRect = this.scrollbar.node.getBoundingClientRect();
-
-    let scrollHeight = scrollbarRect.height;
-
-    let GRIP_EDGE_SIZE = 8;
-    let GRIP_MARGIN = 2;
-
-    let maxScrollInScrollbarRelativeCoords = scrollHeight - GRIP_EDGE_SIZE - GRIP_MARGIN;
-    return maxScrollInScrollbarRelativeCoords;
-  }
-
   getGripScrollRange() {
     // In scrollbar relative coords
-    return this.getMaxGripScroll() - this.getMinGripScroll();
+    return this.scrollbar.getMaxGripScroll() - this.scrollbar.getMinGripScroll();
   }
 
   handleGridResize() {
@@ -516,7 +582,10 @@ class HexEditorWidget extends Widget {
   handleWheelEvent(event: any) {
     this.debugLog('[Hexlab] ******** Wheel event ********')
     this.debugLog(event)
-    let minDelta = this.manager.maxCellCount;
+
+    // Scroll moves the position by max cell count increments
+    // (scrolling by full rows only)
+    let minDelta = this.manager.getMaxCellCountClamped();
     let lastScrollPosition = this.manager.getLastDataStartPosition();
     this.printBasicDiagnosticInfo();
 
@@ -535,18 +604,23 @@ class HexEditorWidget extends Widget {
 
     // Check the cursor
     let range = this.manager.getPageByteRangeInclusive();
+    // If it's not inside the page, put it back inside
     if (!(this.manager.cursor >= range[0] && this.manager.cursor <= range[1])) {
       this.debugLog('[Hexlab]   cursor outside');
       if (event.deltaY < 0) {
         this.debugLog('[Hexlab]   subtract from cursor pos');
         this.manager.cursor -= this.manager.maxCellCount;
-        this.manager.cursor = Math.max(0, this.manager.cursor);
+        this.manager.cursor = this.manager.cursor;
       } else {
         this.debugLog('[Hexlab]   add to cursor pos');
         this.manager.cursor += this.manager.maxCellCount;
-        this.manager.cursor = Math.max(0, Math.min(this.manager.fileSize - 1, this.manager.cursor));
+        this.manager.cursor = this.manager.cursor;
       }
     }
+
+    // The position has been modified, make sure the scrollbar reflects the
+    // current position on the grid
+    this.scrollbar.setPosition(this.manager.position);
 
     this.configureAndFillGrid();
   }
@@ -558,8 +632,8 @@ class HexEditorWidget extends Widget {
     if (event.type == 'mousemove') {
       this.debugLog('[Hexlab] -- Move event found --')
 
-      let minScroll = this.getMinGripScroll();
-      let maxScroll = this.getMaxGripScroll();
+      let minScroll = this.scrollbar.getMinGripScroll();
+      let maxScroll = this.scrollbar.getMaxGripScroll();
 
       let gripRect = this.scrollGrip.getBoundingClientRect();
       this.debugLog('[Hexlab]   GRIPRECT TOP');
@@ -580,6 +654,7 @@ class HexEditorWidget extends Widget {
       let scrollbarRelative = pageY - scrollTop;
       let clampedPosition = Math.min(Math.max(minScroll, scrollbarRelative), maxScroll);
 
+      // TODO refactor this whole func
       let newGripPosition = clampedPosition;
       this.debugLog('[Hexlab]   NEWGRIP');
       this.debugLog(newGripPosition);
@@ -597,20 +672,28 @@ class HexEditorWidget extends Widget {
       this.debugLog('[Hexlab]   clamped row start');
       this.debugLog(clampedRowStartPosition);
 
-      // Set the data position
-      this.manager.position = clampedRowStartPosition;
-      if (newGripPosition <= this.getMinGripScroll()) {
-        // A grip top pos, go to byte 0
-        this.manager.position = 0;
-      } else if (newGripPosition >= this.getMaxGripScroll()) {
-        // A grip bottom pos, go to last data position (last row start)
-        this.manager.position = this.manager.getLastDataStartPosition();
+      // Set the data position  // TODO stop using snake case
+      let data_position_for_drag = this.scrollbar.setDragPosition(newGripPosition);
+      if (!this.manager.isValidRowStartPosition(data_position_for_drag)) {
+        console.log('[HexLab] ERROR bad data position for scroll coordinates');
+        data_position_for_drag = this.manager.getClosestRowStartForPosition(data_position_for_drag);
       }
-      let range = this.manager.getPageByteRangeInclusive();
-      if (!(this.manager.position >= range[0] && this.manager.position <= range[1])) {
-        // TODO this should do a vertical cursor move instead probably?
-        this.manager.cursor = range[0];
-      }
+
+      this.manager.position = data_position_for_drag;
+
+      // this.manager.position = clampedRowStartPosition;
+      // if (newGripPosition <= this.scrollbar.getMinGripScroll()) {
+      //   // A grip top pos, go to byte 0
+      //   this.manager.position = 0;
+      // } else if (newGripPosition >= this.scrollbar.getMaxGripScroll()) {
+      //   // A grip bottom pos, go to last data position (last row start)
+      //   this.manager.position = this.manager.getLastDataStartPosition();
+      // }
+      // let range = this.manager.getPageByteRangeInclusive();
+      // if (!(this.manager.position >= range[0] && this.manager.position <= range[1])) {
+      //   // TODO this should do a vertical cursor move instead probably?
+      //   this.manager.cursor = range[0];
+      // }
 
       // Throttle the grid fill op to once per 60 milliseconds
       let now: any = new Date();
@@ -618,8 +701,8 @@ class HexEditorWidget extends Widget {
         this.configureAndFillGrid();
       }
 
-      // Set the grip position
-      this.scrollGrip.style.top = newGripPosition.toString() + 'px';
+      // // Set the grip position
+      // this.scrollGrip.style.top = newGripPosition.toString() + 'px';
     }
     if (event.type == 'mouseup') {
       this.debugLog('[Hexlab] -- mouseUp found! --')
@@ -649,8 +732,8 @@ class HexEditorWidget extends Widget {
     this.debugLog('[Hexlab]   --------');
     this.debugLog('[Hexlab]     scrollbarPosition: ' + this.scrollbar.node.style.top);
     this.debugLog('[Hexlab]     scrollbarHeight: ' + this.scrollbar.node.style.height);
-    this.debugLog('[Hexlab]     gripMin: ' + this.getMinGripScroll());
-    this.debugLog('[Hexlab]     gripMax: ' + this.getMaxGripScroll());
+    this.debugLog('[Hexlab]     gripMin: ' + this.scrollbar.getMinGripScroll());
+    this.debugLog('[Hexlab]     gripMax: ' + this.scrollbar.getMaxGripScroll());
     this.debugLog('[Hexlab]     gripRange: ' + this.getGripScrollRange());
     this.debugLog('[Hexlab]   ------ End Diagnostic Info ------');
   }
@@ -673,11 +756,11 @@ class HexEditorWidget extends Widget {
     this.printBasicDiagnosticInfo();
 
     if (this.manager.position == this.manager.getLastDataStartPosition()) {
-      this.scrollGrip.style.top = this.getMaxGripScroll().toString() + 'px';
+      this.scrollGrip.style.top = this.scrollbar.getMaxGripScroll().toString() + 'px';
       return;
     }
     if (this.manager.position == 0) {
-      this.scrollGrip.style.top = this.getMinGripScroll().toString() + 'px';
+      this.scrollGrip.style.top = this.scrollbar.getMinGripScroll().toString() + 'px';
       return;
     }
 
@@ -689,13 +772,13 @@ class HexEditorWidget extends Widget {
     this.debugLog('[Hexlab] PERCENT as decimal');
     this.debugLog(barPositionPercentOfMax);
     this.debugLog('[Hexlab] MAXGRIPSC');
-    this.debugLog(this.getMaxGripScroll());
-    let desiredGripPositionRaw = barPositionPercentOfMax * (this.getMaxGripScroll() - this.getMinGripScroll());
+    this.debugLog(this.scrollbar.getMaxGripScroll());
+    let desiredGripPositionRaw = barPositionPercentOfMax * (this.scrollbar.getMaxGripScroll() - this.scrollbar.getMinGripScroll());
     this.debugLog('[Hexlab] GRIP RAWx');
     this.debugLog(desiredGripPositionRaw);
     let desiredGripPosition = Math.max(
-      Math.min(this.getMaxGripScroll(), desiredGripPositionRaw),
-      this.getMinGripScroll()
+      Math.min(this.scrollbar.getMaxGripScroll(), desiredGripPositionRaw),
+      this.scrollbar.getMinGripScroll()
     )
 
     this.debugLog('[Hexlab] DESIREDGRIPPOS');
