@@ -75,7 +75,17 @@ class HexManager {
   }
 
   set position(position: number) {
-    this.currentPosition = Math.max(0, Math.min(this.fileSize, position));
+    let range = this.getFileByteRangeInclusive();
+    let new_position = position;
+    if (!(position >= range[0] && position <= range[1])) {
+      this.debugLog('[HexLab][MGR] Correcting out-of-bounds position ' + position);
+      new_position = Math.max(0, Math.min(this.fileSize, position));
+    }
+    if (!this.isValidRowStartPosition(this.position)) {
+      this.debugLog('[HexLab][MGR] Correcting non-row-start position ' + position);
+      new_position = this.getClosestRowStartForPosition(this.position);
+    }
+    this.currentPosition = new_position;
   }
 
   byte(position: number) {
@@ -216,8 +226,21 @@ class HexManager {
     return closestRowStartBytePosition;
   }
 
+  setPositionOnReflow() {
+    this.position = this.getClosestRowStartForPosition(this.cursor);
+  }
+
   getCurrentFilename() {
     return this.currentFilename;
+  }
+
+  dragCursor() {
+    // On drag, move the cursor down vertically
+    let cursorRowstart = this.getClosestRowStartForPosition(this.cursor);
+    let rowPosition = this.cursor - cursorRowstart;
+
+    // Add row offset to current position, then clamp to filesize
+    this.cursor = (this.position + rowPosition) % this.getFileByteRangeInclusive()[1];
   }
 
   async openFile(fileData: any) {
@@ -335,7 +358,7 @@ class HexScrollBar {
     // Count how many data rows there will be, and our progress through the
     // total row count (scrollbar will always represent a row start position)
     let total_row_count = this.manager.getTotalRowsNeeded();
-    let current_row_count = Math.floor(user_data_position / total_row_count);
+    let current_row_count = Math.floor(user_data_position / this.manager.getMaxCellCountClamped());
 
     let closest_grip_pixel_position = (
       Math.round(1.0 * current_row_count / total_row_count * this.getMaxGripScroll())
@@ -567,6 +590,8 @@ class HexEditorWidget extends Widget {
   handleGridResize() {
     this.debugLog('[Hexlab] ******** GRID RESIZE ********');
     this.setManagerPageMetrics()
+    this.manager.setPositionOnReflow();
+    this.scrollbar.setPosition(this.manager.position);
     this.configureAndFillGrid();
   }
 
@@ -677,13 +702,8 @@ class HexEditorWidget extends Widget {
       // this.debugLog(clampedRowStartPosition);
 
       // Set the data position  // TODO stop using snake case
-      let data_position_for_drag = this.scrollbar.setDragPosition(newGripPosition);
-      if (!this.manager.isValidRowStartPosition(data_position_for_drag)) {
-        console.log('[HexLab] ERROR bad data position for scroll coordinates');
-        data_position_for_drag = this.manager.getClosestRowStartForPosition(data_position_for_drag);
-      }
-
-      this.manager.position = data_position_for_drag;
+      this.scrollbar.setDragPosition(newGripPosition);
+      this.manager.dragCursor()
 
       // this.manager.position = clampedRowStartPosition;
       // if (newGripPosition <= this.scrollbar.getMinGripScroll()) {
