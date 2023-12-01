@@ -736,7 +736,7 @@ class HexEditorWidget extends Widget {
     debugLog('[Hexlab]     FileSize: ' + this.manager.currentFileSize);
     debugLog('[Hexlab]     Data Position: ' + this.manager.currentPosition);
     debugLog('[Hexlab]     Cursor: ' + this.manager.cursor);
-    debugLog('[Hexlab]     lastDataPosition: ' + this.manager.getLastDataStartPosition());
+    debugLog('[Hexlab]     lastRowStart: ' + this.manager.getLastDataStartPosition());
     debugLog('[Hexlab]     closestToCursor: ' + this.manager.getClosestRowStartForPosition(this.manager.cursor));
     debugLog('[Hexlab]     pageByteRange: ' + this.manager.getPageByteRangeInclusive());
     debugLog('[Hexlab]     positionValid: ' + this.manager.isValidRowStartPosition(this.manager.currentPosition));
