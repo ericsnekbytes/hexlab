@@ -110,7 +110,7 @@ class HexManager {
 
   clear() {
     this.currentFilename = null;
-    this.currentFileSize = 0;
+    this.currentFileSize = 0;  // TODO Fix rare corner cases for empty file/no file div by 0
     this.currentPosition = 0;
     this._cursor = 0;
     this._maxCellCount = 0;
@@ -297,16 +297,16 @@ class HexManager {
 class HexScrollBar {
   scrollBar: HTMLElement;
   scrollGrip: HTMLElement;
-  // byteRange: any;
-  // maxCellCountClamped: Number;
-  GRIP_EDGE_SIZE = 8;
-  GRIP_MARGIN = 2;
+
+  // TODO find a better way for these
+  static GRIP_EDGE_SIZE = 8;
+  static GRIP_MARGIN = 2;
+  // ........
+
   manager: any;
 
   constructor(manager: any) {
     this.manager = manager;
-
-    // this.byteRange = [0, 0];
 
     const scrollBar = document.createElement('div');
     scrollBar.classList.add('hexlab_scrollbar');
@@ -346,7 +346,7 @@ class HexScrollBar {
 
     let scrollHeight = scrollbarRect.height;
 
-    let maxScrollInScrollbarRelativeCoords = scrollHeight - this.GRIP_EDGE_SIZE - this.GRIP_MARGIN;
+    let maxScrollInScrollbarRelativeCoords = scrollHeight - HexScrollBar.GRIP_EDGE_SIZE - HexScrollBar.GRIP_MARGIN;
     return maxScrollInScrollbarRelativeCoords;
   }
 
@@ -553,7 +553,7 @@ class HexEditorWidget extends Widget {
 
   handleFileLoadSuccess() {
     // Success, repopulate the view
-    debugLog('******** Handle file load success ********');
+    debugLog('[HexLab] ******** Handle file load success ********');
 
     // Set the filename display
     this.fileLabel.innerText = 'File: ' + this.manager.getCurrentFilename();
@@ -615,7 +615,7 @@ class HexEditorWidget extends Widget {
   }
 
   handleCellClick(event: any) {
-    debugLog(' ******** Cell Click ********');
+    debugLog('[HexLab] ******** Cell Click ********');
     this.printBasicDiagnosticInfo();
     debugLog(event);
 
@@ -825,9 +825,6 @@ class HexEditorWidget extends Widget {
         cell.innerText = charmap[left_hex] + charmap[right_hex];
       }
     }
-
-    // TODO Remove/refactor
-    // this.alignScrollGripPositionToData();
   }
 
   // The cell grid holds row containers and cells containers that
