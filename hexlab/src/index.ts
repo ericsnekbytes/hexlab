@@ -48,13 +48,8 @@ class HexManager {
   private _maxCellCount: number = 0;
   private _maxRowCount: number = 0;
 
-  static STATUS_OKAY = 0;
-  static STATUS_FAIL = 1;
-
   fileOpenSuccess: Signal<any, any>;  // TODO type these
   fileOpenFailure: Signal<any, any>;
-
-  DEBUG = true; // TODO remove
 
   constructor() {
     // Initialize data members
@@ -297,12 +292,6 @@ class HexManager {
     }
   }
 
-  // TODO remove
-  debugLog(message: any) {
-    if (this.DEBUG) {
-      console.log(message)
-    }
-  }
 }
 
 class HexScrollBar {
@@ -313,7 +302,6 @@ class HexScrollBar {
   GRIP_EDGE_SIZE = 8;
   GRIP_MARGIN = 2;
   manager: any;
-  DEBUG = true;
 
   constructor(manager: any) {
     this.manager = manager;
@@ -370,13 +358,6 @@ class HexScrollBar {
     let range = this.getValidGripPositionRange();
     let total_pixel_positions = range[1] - range[0];
     return total_pixel_positions;
-  }
-
-  // TODO remove
-  debugLog(message: any) {
-    if (this.DEBUG) {
-      console.log(message)
-    }
   }
 
   // TODO make this private/refactor
@@ -449,7 +430,6 @@ class HexEditorWidget extends Widget {
   mouseListenerAttached = false;
   boundListener: any;
   lastGridFillTimestamp: any = new Date();
-  DEBUG = true;
 
   gridResizeChecker: any;
 
@@ -526,12 +506,6 @@ class HexEditorWidget extends Widget {
 
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
-  }
-
-  debugLog(message: any) {
-    if (this.DEBUG) {
-      console.log(message)
-    }
   }
 
   triggerFileDialog() {
