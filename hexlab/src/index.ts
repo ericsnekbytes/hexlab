@@ -426,6 +426,7 @@ class HexEditorWidget extends Widget {
   fileLabel: HTMLElement;
   addressGrid: HTMLElement;
   hexGrid: HTMLElement;
+  previewGrid: HTMLElement;
   scrollbar: HexScrollBar;
   scrollGrip: any;
   mouseListenerAttached = false;
@@ -503,6 +504,10 @@ class HexEditorWidget extends Widget {
     this.hexGrid.classList.add('--jp-code-font-family');
     this.hexGrid.classList.add('--jp-code-font-size');
 
+    // Add a grid for the data preview
+    this.previewGrid = document.createElement('div');
+    this.previewGrid.classList.add('hexlab_preview_grid');
+
     // Data scrolling is handled manually via this scrollbar.
     // This is not "true" scrolling (of a long element with overflow),
     // the scrollbar only tracks a position in the user's data, where
@@ -516,6 +521,7 @@ class HexEditorWidget extends Widget {
     this.boundListener = this.handleScrollGripDragMove.bind(this)
     this.scrollGrip.addEventListener('mousedown', this.handleScrollGripDragStart.bind(this));
     this.workspace.appendChild(this.hexGrid);
+    this.workspace.appendChild(this.previewGrid);
     this.workspace.appendChild(this.scrollbar.node);
 
     this.configureAndFillGrid();
@@ -531,6 +537,7 @@ class HexEditorWidget extends Widget {
   clearGrid() {
     this.hexGrid.innerText = '';
     this.addressGrid.innerText = '';
+    this.previewGrid.innerText = '';
   }
 
   // Remove the loaded file, clear all display state
@@ -798,50 +805,61 @@ class HexEditorWidget extends Widget {
 
     // Iterate over row/cell containers and populate with data
     let rowItems = this.hexGrid.children;
+    let previewItems = this.previewGrid.children;
     for (let rowIndex = 0; rowIndex < rowItems.length; rowIndex++) {
       let hexRow = rowItems[rowIndex];
+      let previewRow = previewItems[rowIndex];
 
       for (let cellIndex = 0; cellIndex < hexRow.children.length; cellIndex++) {  // TODO does a whitespace node show up here?
         let cell: any = hexRow.children[cellIndex];
+        let previewCell: any = previewRow.children[cellIndex];
 
         let byteIndex = this.manager.position + (maxCellCountClamped * rowIndex) + cellIndex;
-        if (!(byteIndex < this.manager.fileSize)) {
-          debugLog('[Hexlab] Stopping at invalid byte index');
-          debugLog(byteIndex);
-          return;
-        }
-        let currentByte = this.manager.byte(byteIndex);
+        // If the byteIndex is valid/inside the data range, populate the hex cell
+        if (byteIndex < this.manager.fileSize) {
+          let currentByte = this.manager.byte(byteIndex);
 
-        let left_hex = currentByte >> 4;
-        let right_hex = 15 & currentByte;
+          let left_hex = currentByte >> 4;
+          let right_hex = 15 & currentByte;
 
-        let charmap: any = {  // TODO any
-          0: '0',
-          1: '1',
-          2: '2',
-          3: '3',
-          4: '4',
-          5: '5',
-          6: '6',
-          7: '7',
-          8: '8',
-          9: '9',
-          10: 'a',
-          11: 'b',
-          12: 'c',
-          13: 'd',
-          14: 'e',
-          15: 'f',
-        };
-        if (cellIndex == 0) {
-          cell.style['margin-left'] = '0';
-          cell.style['background-color'] = '#2fc900';
-        }
-        if (byteIndex == this.manager.cursor) {
-          cell.style['background-color'] = '#c200a8';
-        }
+          let charmap: any = {  // TODO any
+            0: '0',
+            1: '1',
+            2: '2',
+            3: '3',
+            4: '4',
+            5: '5',
+            6: '6',
+            7: '7',
+            8: '8',
+            9: '9',
+            10: 'a',
+            11: 'b',
+            12: 'c',
+            13: 'd',
+            14: 'e',
+            15: 'f',
+          };
+          if (cellIndex == 0) {
+            cell.style['margin-left'] = '0';
+            cell.style['background-color'] = '#2fc900';
+          }
+          if (byteIndex == this.manager.cursor) {
+            cell.style['background-color'] = '#c200a8';
+          }
 
-        cell.innerText = charmap[left_hex] + charmap[right_hex];
+          cell.innerText = charmap[left_hex] + charmap[right_hex];
+
+          // Set preview cell text
+          let previewText = '';
+          if (currentByte < 128) {
+            previewText = String.fromCodePoint(currentByte);
+          }
+          else {
+            previewText = '.'
+          }
+          previewCell.innerText = previewText;
+        }
       }
     }
   }
@@ -887,6 +905,7 @@ class HexEditorWidget extends Widget {
 
     // Make rows until the file end is reached
     let rowElements: any = [];
+    let previewElements: any = [];
     let rowStartPos = this.manager.position;
     while (rowStartPos <= range[1]) {
       // Make a row container that holds the bytes for that row
@@ -899,6 +918,13 @@ class HexEditorWidget extends Widget {
       this.hexGrid.appendChild(hexRow);
       rowElements.push(hexRow);
       // debugLog('[Hexlab] Add row for start byte: ' + rowStartPos);
+
+      // Also make corresponding preview containers per row
+      // (holds user-data-as-text cells)
+      let previewContainer = document.createElement('div');
+      previewContainer.classList.add('hexlab_preview_container');
+      this.previewGrid.appendChild(previewContainer);
+      previewElements.push(previewContainer);
 
       // The data position at the start of the row is checked to determine
       // whether a new row is needed. Increment the row's data start position
@@ -915,6 +941,7 @@ class HexEditorWidget extends Widget {
       // debugLog('[Hexlab] -- Row Start @ '+ rowCount);
       for (let cellPosition = 0; cellPosition < maxCellCountClamped; cellPosition++) {
         let currentRow = rowElements[rowCount];
+        let currentPreview = previewElements[rowCount];
 
         // Get the data position of the hex cell we're going to make (the
         // byte this cell is going to display)
@@ -962,10 +989,41 @@ class HexEditorWidget extends Widget {
 
           // Append the cell to the layout row
           currentRow.appendChild(hexCell);
+
+          // Add corresponding text preview cell for this byte
+          let previewCell: any = document.createElement('div');
+          previewCell.classList.add('hexlab_preview_cell');
+          previewCell.metadata = {
+            byteIndex: bytePosition
+          }
+
+          // Append the preview cell to the preview row
+          currentPreview.appendChild(previewCell)
         }
         else {
-          debugLog('[Hexlab] STOP cell build before byteposition ' + bytePosition);
-          break;
+          // This byte position is past the data end,
+          // make an invisible layout placeholder
+
+          // Create the hex cell layout item
+          let hexCell: any = document.createElement('div');
+          hexCell.classList.add('hexlab_hex_placeholder_byte');
+
+          // Append the cell to the layout row
+          currentRow.appendChild(hexCell);
+
+          // Add corresponding text preview cell for this byte
+          let previewCell: any = document.createElement('div');
+          previewCell.classList.add('hexlab_preview_placeholder_cell');
+          previewCell.metadata = {
+            byteIndex: bytePosition
+          }
+
+          // Append the preview cell to the preview row
+          currentPreview.appendChild(previewCell)
+
+          // TODO this is a dynamic cell count feature, fix later
+          // debugLog('[Hexlab] STOP cell build before byteposition ' + bytePosition);
+          // break;
         }
       }
     }
