@@ -405,6 +405,9 @@ class HexScrollBar {
     let newPosition = this.clampGripPosition(gripPosition);
 
     this.setGripPosition(newPosition);
+    if (newPosition == this.getMaxGripScroll()) {
+      return this.manager.getLastDataStartPosition();
+    }
 
     let total_row_count = this.manager.getTotalRowsNeeded();
     let gripPositionAsPercent = newPosition * 1.0 / this.getMaxGripScroll();
