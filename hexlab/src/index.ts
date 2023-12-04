@@ -424,12 +424,21 @@ class HexEditorWidget extends Widget {
   openButton: any;
   openInputHidden: any;
   fileLabel: HTMLElement;
+  addressGrid: HTMLElement;
   hexGrid: HTMLElement;
   scrollbar: HexScrollBar;
   scrollGrip: any;
   mouseListenerAttached = false;
   boundListener: any;
   lastGridFillTimestamp: any = new Date();
+  // ////////
+  // HexLab has logic for automatic reflow/resizability depending on the
+  // window width. More work needs to be done for full and correct automatic
+  // resizing and reflow-ability. Until then, sizing will be fixed (at a user
+  // specified byte width) and responsiblity for resizing will be ceded to
+  // the user (with controls for manually increasing/decreasing byte width).
+  desiredGridWidth = 16;
+  // ////////
 
   gridResizeChecker: any;
 
@@ -483,6 +492,11 @@ class HexEditorWidget extends Widget {
     this.gridResizeChecker.observe(this.workspace);
     this.mainArea.appendChild(this.workspace);
 
+    // Add a column on the grid for data addresses
+    this.addressGrid = document.createElement('div');
+    this.addressGrid.classList.add('hexlab_address_grid');
+    this.workspace.appendChild(this.addressGrid);
+
     // Define a grid with slots to hold byte content
     this.hexGrid = document.createElement('div');
     this.hexGrid.classList.add('hexlab_hex_grid');
@@ -516,6 +530,7 @@ class HexEditorWidget extends Widget {
   // Completely empty the hex grid of all elements/content
   clearGrid() {
     this.hexGrid.innerText = '';
+    this.addressGrid.innerText = '';
   }
 
   // Remove the loaded file, clear all display state
@@ -602,8 +617,12 @@ class HexEditorWidget extends Widget {
   }
 
   setManagerPageMetrics() {
-    this.manager.maxCellCount = this.cellsPerWidth();
+    this.manager.maxCellCount = this.desiredGridWidth;
     this.manager.maxRowCount = this.rowsPerHeight();
+
+    // TODO re-enable space-based auto sizing
+    // this.manager.maxCellCount = this.cellsPerWidth();
+    // this.manager.maxRowCount = this.rowsPerHeight();
   }
 
   handleGridResize() {
@@ -847,8 +866,7 @@ class HexEditorWidget extends Widget {
     this.clearGrid();
 
     // Make the manager aware of the grid space
-    this.manager.maxCellCount = this.cellsPerWidth();
-    this.manager.maxRowCount = this.rowsPerHeight();
+    this.setManagerPageMetrics()
 
     // Show some basic stats
     this.printBasicDiagnosticInfo();
@@ -903,6 +921,23 @@ class HexEditorWidget extends Widget {
         let bytePosition = this.manager.position + (maxCellCountClamped * rowCount) + cellPosition;
       //  debugLog('[Hexlab] BytePosition');
       //  debugLog(bytePosition);
+
+        // Once per row, set the row address contents on the addressGrid
+        if (cellPosition == 0) {
+          // Make an address row container
+          let addressContainer: any = document.createElement('div');
+          addressContainer.classList.add('hexlab_address_container');
+          this.addressGrid.appendChild(addressContainer);
+
+          // Set address contents
+          let addressText = '0x' + bytePosition.toString(16).padStart(4, "0");
+          for (let char of addressText) {
+            let addressCell: any = document.createElement('div');
+            addressCell.classList.add('hexlab_address_cell');  // TODO class constants
+            addressCell.innerText = char;
+            addressContainer.appendChild(addressCell);
+          }
+        }
 
         // Add a cell if the position is valid (not past file size bounds)
         if (bytePosition < this.manager.fileSize) {

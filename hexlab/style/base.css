@@ -77,6 +77,7 @@
   border-radius: 2px;
   padding: 0px 0px 0px 8px;
   background-color: var(--jp-layout-color2);
+  overflow: hidden;
 }
 
 .hexlab_hex_row {
@@ -96,6 +97,37 @@
   vertical-align: middle;
   border-radius: 2px;
   background-color: var(--jp-layout-color3);
+  color: --jp-ui-font-color0;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+.hexlab_address_grid {
+  height: calc(100% - 8px);
+  border-radius: 2px;
+  padding: 0px 0px 0px 8px;
+  background-color: var(--jp-layout-color2);
+}
+
+.hexlab_address_container {
+  height: 20px;
+  /* width: calc(100%); */
+  display: flex;
+  align-items: start;
+  border-radius: 2px;
+  background-color: var(--jp-layout-color3);
+  margin: 0px 4px 0px 4px;
+}
+
+.hexlab_address_cell {
+  height: 20px;
+  width: 8px;
+  margin: 0px 1px 0px 1px;
+  text-align: center;
+  vertical-align: middle;
+  /* border-radius: 2px;
+  background-color: var(--jp-layout-color3); */
   color: --jp-ui-font-color0;
   overflow: hidden;
   flex-shrink: 0;
