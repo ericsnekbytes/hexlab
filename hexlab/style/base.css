@@ -9,6 +9,7 @@
   --jp-hexlab-root-border-width: var(--jp-hexlab-debug-border-width);
   --jp-hexlab-ui-margin: 8px;
   --jp-hexlab-cell-height: 16px;
+  --jp-hexlab-cell-margin: var(--jp-hexlab-ui-margin);
   width: 100%;
   height: 100%;
   background-color: var(--jp-layout-color1);
@@ -90,10 +91,10 @@
 
 .hexlab_hex_grid {
   /* width: calc(100%); */
-  height: calc(100% - 8px);
+  height: calc(100% - var(--jp-hexlab-ui-margin));
   border-radius: 2px;
-  margin: 0px 8px 0px 0px;
-  padding: 0px 0px 0px 8px;
+  margin: 0px var(--jp-hexlab-ui-margin) 0px 0px;
+  padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
   background-color: var(--jp-layout-color2);
   overflow: hidden;
 }
@@ -101,7 +102,7 @@
 .hexlab_hex_row {
   height: var(--jp-hexlab-cell-height);
   width: calc(100%);
-  margin: 0px 0px 8px 0px;
+  margin: 0px 0px var(--jp-hexlab-ui-margin) 0px;
   display: flex;
   align-items: start;
 }
@@ -109,7 +110,7 @@
 .hexlab_hex_byte {
   height: var(--jp-hexlab-cell-height);
   width: var(--jp-hexlab-cell-height);
-  margin: 0px 4px 0px 4px;
+  margin: 0px calc(var(--jp-hexlab-cell-margin) / 2) 0px calc(var(--jp-hexlab-cell-margin) / 2);
   display: inline-block;
   text-align: center;
   vertical-align: middle;
@@ -138,22 +139,22 @@
 }
 
 .hexlab_address_grid {
-  height: calc(100% - 8px);
+  height: calc(100% - var(--jp-hexlab-ui-margin));
   border-radius: 2px;
-  padding: 0px 0px 0px 8px;
-  margin: 0px 8px 0px 0px;
+  padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
+  margin: 0px var(--jp-hexlab-ui-margin) 0px 0px;
   background-color: var(--jp-layout-color2);
 }
 
 .hexlab_address_container {
   height: var(--jp-hexlab-cell-height);
-  padding: 0px 8px 0px 8px;
+  padding: 0px var(--jp-hexlab-ui-margin) 0px var(--jp-hexlab-ui-margin);
   /* width: calc(100%); */
   display: flex;
   align-items: start;
   border-radius: 2px;
-  background-color: var(--jp-layout-color3);
-  margin: 0px 0px 8px 0px;
+  /* background-color: var(--jp-layout-color3); */
+  margin: 0px 0px var(--jp-hexlab-ui-margin) 0px;
 }
 
 .hexlab_address_cell {
@@ -172,16 +173,16 @@
 }
 
 .hexlab_preview_grid {
-  height: calc(100% - 8px);
+  height: calc(100% - var(--jp-hexlab-ui-margin));
   border-radius: 2px;
-  padding: 0px 0px 0px 8px;
+  padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
   background-color: var(--jp-layout-color2);
 }
 
 .hexlab_preview_container {
   height: var(--jp-hexlab-cell-height);
   width: calc(100%);
-  margin: 0px 0px 8px 0px;
+  margin: 0px 0px var(--jp-hexlab-ui-margin) 0px;
   display: flex;
   align-items: start;
 }
@@ -225,7 +226,7 @@
 
 .hexlab_scrollbar {
   width: 12px;
-  height: calc(100% - 8px);
+  height: calc(100% - var(--jp-hexlab-ui-margin));
   border-radius: 2px;
   background-color: var(--jp-layout-color1);
   display: inline-block;
