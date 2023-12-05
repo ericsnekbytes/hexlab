@@ -650,6 +650,12 @@ class HexEditorWidget extends Widget {
 
   handleGridResize() {
     debugLog('[Hexlab] ******** GRID RESIZE ********');
+
+    // Do nothing for empty files
+    if (this.manager.isEmpty()) {
+      return;
+    }
+
     this.setManagerPageMetrics()
     this.manager.setPositionOnReflow();
     this.scrollbar.setPosition(this.manager.position);
@@ -669,6 +675,11 @@ class HexEditorWidget extends Widget {
   handleWheelEvent(event: any) {
     debugLog('[Hexlab] ******** Wheel event ********')
     debugLog(event)
+
+    // Do nothing for empty files
+    if (this.manager.isEmpty()) {
+      return;
+    }
 
     // Scroll moves the position by max cell count increments
     // (scrolling by full rows only)
@@ -717,6 +728,11 @@ class HexEditorWidget extends Widget {
 
   handleScrollGripDragMove(event: any) {
     debugLog('[Hexlab] ******** Mouse event! ********');
+
+    // Do nothing for empty files
+    if (this.manager.isEmpty()) {
+      return;
+    }
 
     // Handles subsequent mouse events until a mouseup
     if (event.type == 'mousemove') {
@@ -798,6 +814,10 @@ class HexEditorWidget extends Widget {
 
   handleScrollGripDragStart(event: any) {
     debugLog('[Hexlab] ******** Scroll grip drag start! ********');
+    if (this.manager.isEmpty()) {
+      return;
+    }
+
     this.printBasicDiagnosticInfo();
     if(!this.mouseListenerAttached) {
       window.addEventListener('mouseup', this.boundListener, false);
