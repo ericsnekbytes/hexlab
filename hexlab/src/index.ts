@@ -426,6 +426,7 @@ class HexEditorWidget extends Widget {
   topArea: HTMLElement;
   openButton: any;
   openInputHidden: any;
+  clearFileButton: any;
   fileLabel: HTMLElement;
   addressGrid: HTMLElement;
   hexGrid: HTMLElement;
@@ -482,6 +483,14 @@ class HexEditorWidget extends Widget {
     this.openButton.addEventListener('click', this.triggerFileDialog.bind(this), {passive: true});
     this.openInputHidden.addEventListener('input' , this.startFileLoad.bind(this), {passive: true});
     this.topArea.appendChild(this.openButton);
+
+    // Add a button for clearing/unloading the current file
+    this.clearFileButton = document.createElement('div');
+    this.clearFileButton.classList.add('hexlab_close_file_button');
+    this.clearFileButton.innerText = '\u{00d7}';
+    this.clearFileButton.addEventListener('click', this.handleCloseFile.bind(this), {passive: true});
+    this.topArea.appendChild(this.clearFileButton);
+
     // Label shows the name of the current open file
     let fileLabel = document.createElement('div');
     fileLabel.classList.add('hexlab_file_label');
@@ -529,6 +538,10 @@ class HexEditorWidget extends Widget {
 
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
+  }
+
+  handleCloseFile() {
+    this.clearLoadedFile();
   }
 
   triggerFileDialog() {

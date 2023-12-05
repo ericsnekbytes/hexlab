@@ -45,12 +45,28 @@
   height: var(--jp-hexlab-open-button-height);
   width: var(--jp-hexlab-open-button-width);
   min-width: var(--jp-hexlab-open-button-width);
-  margin: var(--jp-hexlab-ui-margin);
+  margin: var(--jp-hexlab-ui-margin) calc(var(--jp-hexlab-ui-margin) / 2) var(--jp-hexlab-ui-margin) var(--jp-hexlab-ui-margin);
   padding-top: 9px;
   text-align: center;
   vertical-align: middle;
   border-radius: 2px;
   background-color: #2296f3;
+  color: #212121;
+}
+
+.hexlab_close_file_button {
+  --jp-hexlab-closefile-button-width: 16px;
+  --jp-hexlab-closefile-button-height: 30px;
+  --jp-hexlab-closefile-button-margin: var(--jp-hexlab-ui-margin);
+  height: var(--jp-hexlab-closefile-button-height);
+  width: var(--jp-hexlab-closefile-button-width);
+  min-width: var(--jp-hexlab-closefile-button-width);
+  margin: var(--jp-hexlab-ui-margin) var(--jp-hexlab-ui-margin) var(--jp-hexlab-ui-margin) 0px;
+  padding-top: 9px;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: 2px;
+  background-color: red;
   color: #212121;
 }
 
