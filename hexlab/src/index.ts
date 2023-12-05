@@ -447,6 +447,11 @@ class HexEditorWidget extends Widget {
 
   gridResizeChecker: any;
 
+  // Set these from CSS values
+  CELLROWMARGIN = 1;
+  CELL_WIDTH =  1;  
+  CELL_MARGIN = 1;
+
   constructor() {
     super();
 
@@ -536,8 +541,43 @@ class HexEditorWidget extends Widget {
     this.workspace.appendChild(this.previewGrid);
     this.workspace.appendChild(this.scrollbar.node);
 
+    this.getMetricsFromCSS();
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
+  }
+
+  getMetricsFromCSS() {
+    // Grab sizing metrics (cell width, margins, etc) from CSS/properties
+    console.log('[HexLab] ******** Getting page metrics ********');
+    let styleSheets = document.styleSheets;
+    for (let i = 0; i < styleSheets.length; i++) {
+      let style = styleSheets[i];
+      let rules: any = style.cssRules;
+
+      for (let i = 0; i < rules.length; i++) {
+        let rule = rules[i];
+
+        if (rule.constructor.name == 'CSSStyleRule') {
+          let selector = rule.selectorText;
+          let style = rule.style;
+          if (selector.includes('hexlab')) {
+            if (selector.includes('hexlab_root_widget')) {
+              console.log('[HexLab]  Found ' + selector);
+
+              // Grab the cell width for cell count calculations
+              this.CELL_WIDTH = parseInt(style.getPropertyValue('--jp-hexlab-cell-height'));
+              console.log('[HexLab]    Cell width is ' + this.CELL_WIDTH);
+
+              this.CELL_MARGIN = parseInt(style.getPropertyValue('--jp-hexlab-ui-margin'));
+              console.log('[HexLab]    Cell margin is ' + this.CELL_MARGIN);
+
+              this.CELLROWMARGIN = parseInt(style.getPropertyValue('--jp-hexlab-ui-margin'));
+              console.log('[HexLab]    Row margin is ' + this.CELLROWMARGIN);
+            }
+          }
+        }
+      }
+    }
   }
 
   handleCloseFile() {
@@ -603,32 +643,26 @@ class HexEditorWidget extends Widget {
   cellsPerWidth() {
     // Gets raw how-many-cells-fit-in-this-page-width value
     // (doesn't impose any minimums etc, just gives cells per width)
-    let CELLROWMARGIN = 8;  // TODO refactor these values
 
     // Determines how many cells can fit in the hex area width
     let gridWidthRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('width');
-    let gridWidth: number = parseInt(gridWidthRaw) - (2 * CELLROWMARGIN);
+    let gridWidth: number = parseInt(gridWidthRaw) - (2 * this.CELLROWMARGIN);
 
-    let CELL_WIDTH =  20;  // TODO refactor these values
-    let CELL_MARGIN = 8;
     return Math.floor(
-      ((gridWidth - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
+      ((gridWidth - this.CELL_MARGIN) / (this.CELL_MARGIN + this.CELL_WIDTH))
     )
   }
 
   rowsPerHeight() {
     // Gets raw how-many-row-fit-in-this-page-height value
     // (doesn't impose any minimums etc, just gives rows per height)
-    let CELLROWMARGIN = 8;
 
     // Determines how many rows can fit in the hex area height
     let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
-    let gridHeight: number = parseInt(gridHeightRaw) - (2 * CELLROWMARGIN);
+    let gridHeight: number = parseInt(gridHeightRaw) - (2 * this.CELLROWMARGIN);
 
-    let CELL_WIDTH =  20;
-    let CELL_MARGIN = 8;
     let maxRows = Math.floor(
-      ((gridHeight - CELL_MARGIN) / (CELL_MARGIN + CELL_WIDTH))
+      ((gridHeight - this.CELL_MARGIN) / (this.CELL_MARGIN + this.CELL_WIDTH))
     )
 
     return maxRows;

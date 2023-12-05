@@ -8,6 +8,7 @@
   --jp-hexlab-debug-border-width: 1px;
   --jp-hexlab-root-border-width: var(--jp-hexlab-debug-border-width);
   --jp-hexlab-ui-margin: 8px;
+  --jp-hexlab-cell-height: 16px;
   width: 100%;
   height: 100%;
   background-color: var(--jp-layout-color1);
@@ -98,7 +99,7 @@
 }
 
 .hexlab_hex_row {
-  height: 20px;
+  height: var(--jp-hexlab-cell-height);
   width: calc(100%);
   margin: 0px 0px 8px 0px;
   display: flex;
@@ -106,14 +107,14 @@
 }
 
 .hexlab_hex_byte {
-  height: 20px;
-  width: 20px;
+  height: var(--jp-hexlab-cell-height);
+  width: var(--jp-hexlab-cell-height);
   margin: 0px 4px 0px 4px;
   display: inline-block;
   text-align: center;
   vertical-align: middle;
-  border-radius: 2px;
-  background-color: var(--jp-layout-color3);
+  /* border-radius: 2px;
+  background-color: var(--jp-layout-color3); */
   color: --jp-ui-font-color0;
   overflow: hidden;
   flex-shrink: 0;
@@ -121,8 +122,8 @@
 }
 
 .hexlab_hex_placeholder_byte {
-  height: 20px;
-  width: 20px;
+  height: var(--jp-hexlab-cell-height);
+  width: var(--jp-hexlab-cell-height);
   margin: 0px 4px 0px 4px;
   visibility: hidden;
   display: inline-block;
@@ -145,8 +146,8 @@
 }
 
 .hexlab_address_container {
-  height: 20px;
-  padding: 0px 8px px 0px 8px;
+  height: var(--jp-hexlab-cell-height);
+  padding: 0px 8px 0px 8px;
   /* width: calc(100%); */
   display: flex;
   align-items: start;
@@ -156,8 +157,9 @@
 }
 
 .hexlab_address_cell {
-  height: 20px;
+  height: var(--jp-hexlab-cell-height);
   width: 8px;
+  display: inline-block;
   margin: 0px 1px 0px 1px;
   text-align: center;
   vertical-align: middle;
@@ -177,7 +179,7 @@
 }
 
 .hexlab_preview_container {
-  height: 20px;
+  height: var(--jp-hexlab-cell-height);
   width: calc(100%);
   margin: 0px 0px 8px 0px;
   display: flex;
@@ -185,7 +187,7 @@
 }
 
 .hexlab_preview_cell {
-  height: 20px;
+  height: var(--jp-hexlab-cell-height);
   width: 10px;
   margin: 0px 4px 0px 4px;
   display: inline-block;
@@ -201,7 +203,7 @@
 }
 
 .hexlab_preview_placeholder_cell {
-  height: 20px;
+  height: var(--jp-hexlab-cell-height);
   width: 10px;
   margin: 0px 4px 0px 4px;
   visibility: hidden;
