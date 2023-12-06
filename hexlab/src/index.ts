@@ -424,10 +424,17 @@ class HexEditorWidget extends Widget {
   mainArea: HTMLElement;
   workspace: HTMLElement;
   topArea: HTMLElement;
+  fileControls: HTMLElement;
   openButton: any;
   openInputHidden: any;
   clearFileButton: any;
   fileLabel: HTMLElement;
+  topDivider: HTMLElement;
+  gridWidthControls: HTMLElement;
+  gridWidthLabel: HTMLElement;
+  gridWidthCountLbl: HTMLElement;
+  decreaseGridWidthBtn: HTMLElement;
+  increaseGridWidthBtn: HTMLElement;
   addressGrid: HTMLElement;
   hexGrid: HTMLElement;
   previewGrid: HTMLElement;
@@ -468,13 +475,18 @@ class HexEditorWidget extends Widget {
     this.mainArea.classList.add('hexlab_main_area');
     this.node.appendChild(this.mainArea);
 
-    // Top area has controls for opening a local file
+    // Top area has controls for opening a local file and 
     let topArea = document.createElement('div');
     topArea.classList.add('--jp-code-font-family');
     topArea.classList.add('--jp-code-font-size');
     topArea.classList.add('hexlab_top_area');
     this.mainArea.appendChild(topArea);
     this.topArea = topArea;
+
+    // File management area
+    this.fileControls = document.createElement('div');
+    this.fileControls.classList.add('hexlab_file_controls');
+    this.topArea.appendChild(this.fileControls);
 
     // Set up the file open button and filename label
     this.openButton = document.createElement('div');
@@ -486,21 +498,54 @@ class HexEditorWidget extends Widget {
     this.openButton.innerText = 'Load File';
     this.openButton.addEventListener('click', this.triggerFileDialog.bind(this), {passive: true});
     this.openInputHidden.addEventListener('input' , this.startFileLoad.bind(this), {passive: true});
-    this.topArea.appendChild(this.openButton);
+    this.fileControls.appendChild(this.openButton);
 
     // Add a button for clearing/unloading the current file
     this.clearFileButton = document.createElement('div');
     this.clearFileButton.classList.add('hexlab_close_file_button');
     this.clearFileButton.innerText = '\u{00d7}';
     this.clearFileButton.addEventListener('click', this.handleCloseFile.bind(this), {passive: true});
-    this.topArea.appendChild(this.clearFileButton);
+    this.fileControls.appendChild(this.clearFileButton);
 
     // Label shows the name of the current open file
     let fileLabel = document.createElement('div');
     fileLabel.classList.add('hexlab_file_label');
-    topArea.appendChild(fileLabel);
+    this.fileControls.appendChild(fileLabel);
     fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
     this.fileLabel = fileLabel;
+
+    // Divider for a new row of top area controls
+    this.topDivider = document.createElement('div');
+    this.topDivider.classList.add('hexlab_top_divider');
+    this.topArea.appendChild(this.topDivider)
+
+    // Controls for expanding/shrinking the displayed byte width
+    this.gridWidthControls = document.createElement('div');
+    this.gridWidthControls.classList.add('hexlab_grid_width_controls');
+    this.topArea.appendChild(this.gridWidthControls);
+    // ....
+    this.gridWidthLabel = document.createElement('div');
+    this.gridWidthLabel.classList.add('hexlab_grid_width_lbl');
+    this.gridWidthLabel.innerText = 'Bytes per row';
+    this.gridWidthControls.appendChild(this.gridWidthLabel)
+    // ....
+    this.decreaseGridWidthBtn = document.createElement('div');
+    this.decreaseGridWidthBtn.classList.add('hexlab_decrease_grid_width_btn');
+    this.decreaseGridWidthBtn.innerText = '\u{25c0}';
+    this.decreaseGridWidthBtn.addEventListener('click', this.handleGridWidthDecrease.bind(this), {passive: true});
+    this.gridWidthControls.appendChild(this.decreaseGridWidthBtn)
+    // ....
+    this.increaseGridWidthBtn = document.createElement('div');
+    this.increaseGridWidthBtn.classList.add('hexlab_increase_grid_width_btn');
+    this.increaseGridWidthBtn.innerText = '\u{25b6}';
+    this.increaseGridWidthBtn.addEventListener('click', this.handleGridWidthIncrease.bind(this), {passive: true});
+    this.gridWidthControls.appendChild(this.increaseGridWidthBtn)
+    // ....
+    this.gridWidthCountLbl = document.createElement('div');
+    this.gridWidthCountLbl.classList.add('hexlab_grid_count_lbl');
+    this.gridWidthCountLbl.innerText = '()';
+    this.setGridWidth(this.desiredGridWidth);
+    this.gridWidthControls.appendChild(this.gridWidthCountLbl)
 
     // Define a container to hold the hex grid and related controls
     this.workspace = document.createElement('div');
@@ -542,6 +587,24 @@ class HexEditorWidget extends Widget {
 
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
+  }
+
+  // Set number of bytes per page row
+  setGridWidth(width: number) {
+    this.desiredGridWidth = Math.max(2, width);
+    this.gridWidthCountLbl.innerText = '(' + this.desiredGridWidth + ')' ;
+  }
+
+  handleGridWidthDecrease() {
+    debugLog('[HexLab] Decrease grid width');
+    this.setGridWidth(this.desiredGridWidth - 1);
+    this.configureAndFillGrid();
+  }
+
+  handleGridWidthIncrease() {
+    debugLog('[HexLab] Increase grid width');
+    this.setGridWidth(this.desiredGridWidth + 1);
+    this.configureAndFillGrid();
   }
 
   handleCloseFile() {

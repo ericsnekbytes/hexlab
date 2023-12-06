@@ -28,6 +28,11 @@
 }
 
 .hexlab_top_area {
+  width: 100%;
+  margin: 0px;
+}
+
+.hexlab_file_controls {
   display: flex;
   margin: 0px;
   align-items: center;
@@ -77,6 +82,79 @@
   color: --jp-ui-inverse-font-color0;
   text-wrap: nowrap;
   text-overflow: clip;
+}
+
+.hexlab_top_divider {
+  margin: 0px 0px 0px 0px;
+  width: 100%;
+  /* height: 8px; */
+  height: var(--jp-hexlab-root-border-width);
+  background-color: var(--jp-layout-color2);
+}
+
+.hexlab_grid_width_controls {
+  display: flex;
+  margin: 0px;
+  align-items: center;
+  background-color: var(--jp-layout-color1);
+  border: solid;
+  border-bottom-width: var(--jp-border-width);
+  border-left-width: 0;
+  border-top-width: 0;
+  border-right-width: 0;
+  border-color: var(--jp-border-color2);
+}
+
+.hexlab_grid_width_lbl {
+  margin: 8px 4px 0px 8px;
+  color: --jp-ui-inverse-font-color0;
+  text-wrap: nowrap;
+  text-overflow: clip;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.hexlab_grid_count_lbl {
+  margin: 8px 4px 0px 4px;
+  color: --jp-ui-inverse-font-color0;
+  text-wrap: nowrap;
+  text-overflow: clip;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.hexlab_decrease_grid_width_btn {
+  --jp-hexlab-open-button-width: 150px;
+  --jp-hexlab-open-button-height: 30px;
+  --jp-hexlab-open-button-margin: var(--jp-hexlab-ui-margin);
+  height: 20px;
+  width: 72px;
+  min-width: 72px;
+  margin: var(--jp-hexlab-ui-margin) calc(var(--jp-hexlab-ui-margin) / 4) var(--jp-hexlab-ui-margin) var(--jp-hexlab-ui-margin);
+  padding-top: 4px;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: 2px;
+  background-color: #2296f3;
+  color: #212121;
+  user-select: none;
+}
+
+.hexlab_increase_grid_width_btn {
+  --jp-hexlab-open-button-width: 150px;
+  --jp-hexlab-open-button-height: 30px;
+  --jp-hexlab-open-button-margin: var(--jp-hexlab-ui-margin);
+  height: 20px;
+  width: 72px;
+  min-width: 72px;
+  margin: var(--jp-hexlab-ui-margin) calc(var(--jp-hexlab-ui-margin) / 2) var(--jp-hexlab-ui-margin) calc(var(--jp-hexlab-ui-margin) / 4);
+  padding-top: 4px;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: 2px;
+  background-color: #2296f3;
+  color: #212121;
+  user-select: none;
 }
 
 .hexlab_workspace {
