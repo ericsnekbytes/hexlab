@@ -447,10 +447,9 @@ class HexEditorWidget extends Widget {
 
   gridResizeChecker: any;
 
-  // Set these from CSS values
-  CELLROWMARGIN = -1;
-  CELL_WIDTH = -1;  
-  CELL_MARGIN = -1;
+  CELLROWMARGIN = 8;
+  CELL_WIDTH = 16;  
+  CELL_MARGIN = 8;
 
   constructor() {
     super();
@@ -541,68 +540,8 @@ class HexEditorWidget extends Widget {
     this.workspace.appendChild(this.previewGrid);
     this.workspace.appendChild(this.scrollbar.node);
 
-    this.setPageMetrics();
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
-  }
-
-  setPageMetrics() {
-    // Set page sizing metrics (cell with, margins, etc). Note
-    // that this should match what is defined in the CSS styles.
-    this.CELLROWMARGIN = 8;
-    this.CELL_WIDTH = 16;  
-    this.CELL_MARGIN = 8;
-    // this.getMetricsFromCSS();
-  }
-
-  // TODO fix/refactor this
-  getMetricsFromCSS() {
-    // Grab sizing metrics (cell width, margins, etc) from CSS/properties
-    // Note: There are some assumptions built into the values here, making
-    // it only semi-reusable when applying complex style changes. If you
-    // plan to make style changes, make sure you update the logic here
-    // as needed to prevent page metric glitches.
-    console.log('[HexLab] ******** Getting page metrics ********');
-    let styleSheets = document.styleSheets;
-    for (let i = 0; i < styleSheets.length; i++) {
-      let style = styleSheets[i];
-      let rules: any = style.cssRules;
-
-      for (let i = 0; i < rules.length; i++) {
-        let rule = rules[i];
-
-        if (rule.constructor.name == 'CSSStyleRule') {
-          let selector = rule.selectorText;
-          let style = rule.style;
-
-          if (selector.includes('hexlab_hex_row')) {
-            console.log('[HexLab]  Found ' + selector);
-
-            this.CELLROWMARGIN = style.getPropertyValue('--jp-hexlab-ui-margin');
-            console.log('[HexLab]    Row margin is ' + this.CELLROWMARGIN);
-          }
-
-          if (selector.includes('hexlab_hex_byte')) {
-            console.log('[HexLab]  Found ' + selector);
-
-            this.CELL_WIDTH = parseInt(style.getPropertyValue('--jp-hexlab-cell-height'));
-            console.log('[HexLab]    Cell width is ' + this.CELL_WIDTH);
-
-            this.CELL_MARGIN = parseInt(style.getPropertyValue('--jp-hexlab-cell-margin'));
-            console.log('[HexLab]    Cell margin is ' + this.CELL_MARGIN);
-          }
-        }
-      }
-    }
-    if (this.CELL_WIDTH == -1) {
-      console.log('[HexLab] ERROR setting CELL_WIDTH');
-    }
-    if (this.CELL_MARGIN == -1) {
-      console.log('[HexLab] ERROR setting CELL_MARGIN');
-    }
-    if (this.CELLROWMARGIN == -1) {
-      console.log('[HexLab] ERROR setting CELLROWMARGIN');
-    }
   }
 
   handleCloseFile() {
