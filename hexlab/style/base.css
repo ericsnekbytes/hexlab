@@ -25,6 +25,8 @@
   height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
   background-color: var(--jp-layout-color1);
   border: solid 1px orange;
+  display: flex;
+  flex-direction: column;
 }
 
 .hexlab_top_area {
@@ -158,8 +160,8 @@
 }
 
 .hexlab_workspace {
-  width: calc(100% +2px - calc(var(--jp-hexlab-root-border-width) - var(--jp-hexlab-open-button-height) - var(--jp-hexlab-open-button-margin)));
-  height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 60));
+  width: 100%;
+  height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
   border: solid 1px yellow;
   border-radius: 2px;
   display: flex;

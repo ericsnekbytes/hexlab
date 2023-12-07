@@ -251,12 +251,38 @@ class HexManager {
   }
 
   dragCursor() {
-    // On drag, move the cursor down vertically
-    let cursorRowstart = this.getClosestRowStartForPosition(this.cursor);
-    let rowPosition = this.cursor - cursorRowstart;
+    // On drag, move the cursor vertically
+    debugLog('[HexLab] ******** Drag Cursor ********');
+    let pageRange = this.getPageByteRangeInclusive();
+    if (!(this._cursor >= pageRange[0] && this._cursor <= pageRange[1])) {
+      let cursorRowStart = this.getClosestRowStartForPosition(this.cursor);
+      let rowPosition = this._cursor - cursorRowStart;
+      debugLog('Page bRange' + pageRange);
+      debugLog('maxcellcount ' + this.getMaxCellCountClamped());
+      debugLog('last page rowstart ' + this.getClosestRowStartForPosition(pageRange[1]));
+      debugLog('---');
+      debugLog('cursor row start ' + cursorRowStart);
+      debugLog('row offset ' + rowPosition);
+      debugLog('---');
 
-    // Add row offset to current position, then clamp to filesize
-    this.cursor = this.clampPositionToValidByteIndices(this.position + rowPosition);
+      let closestPosTopRow = this.clampPositionToValidByteIndices(this.position + rowPosition);
+      let closestPosBottomRow = this.clampPositionToValidByteIndices(
+        this.getClosestRowStartForPosition(pageRange[1]) + rowPosition
+      )
+      let topDistance = Math.abs(this._cursor - closestPosTopRow);
+      let bottomDistance = Math.abs(this._cursor - closestPosBottomRow);
+
+      let newPosition = closestPosTopRow;
+      if (bottomDistance < topDistance) {
+        newPosition = closestPosBottomRow;
+      }
+      debugLog('ctop ' + closestPosTopRow);
+      debugLog('cbott ' + closestPosBottomRow);
+      debugLog('newpos ' + newPosition);
+
+      this.cursor = newPosition;
+      debugLog('[HexLab] ****************');
+    }
   }
 
   async openFile(fileData: any) {
@@ -544,7 +570,6 @@ class HexEditorWidget extends Widget {
     this.gridWidthCountLbl = document.createElement('div');
     this.gridWidthCountLbl.classList.add('hexlab_grid_count_lbl');
     this.gridWidthCountLbl.innerText = '()';
-    this.setGridWidth(this.desiredGridWidth);
     this.gridWidthControls.appendChild(this.gridWidthCountLbl)
 
     // Define a container to hold the hex grid and related controls
@@ -585,26 +610,30 @@ class HexEditorWidget extends Widget {
     this.workspace.appendChild(this.previewGrid);
     this.workspace.appendChild(this.scrollbar.node);
 
+    this.setGridWidth(this.desiredGridWidth);
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
   }
 
   // Set number of bytes per page row
   setGridWidth(width: number) {
-    this.desiredGridWidth = Math.max(2, width);
+    this.desiredGridWidth = Math.max(1, width);
     this.gridWidthCountLbl.innerText = '(' + this.desiredGridWidth + ')' ;
+    this.setManagerPageMetrics();
+    // Note that the current position may be invalid after reflow (not a row start),
+    // corerect it so the position is a multiple of the max cell count
+    this.manager.setPositionOnReflow();
+    this.configureAndFillGrid();
   }
 
   handleGridWidthDecrease() {
     debugLog('[HexLab] Decrease grid width');
     this.setGridWidth(this.desiredGridWidth - 1);
-    this.configureAndFillGrid();
   }
 
   handleGridWidthIncrease() {
     debugLog('[HexLab] Increase grid width');
     this.setGridWidth(this.desiredGridWidth + 1);
-    this.configureAndFillGrid();
   }
 
   handleCloseFile() {
@@ -686,7 +715,7 @@ class HexEditorWidget extends Widget {
 
     // Determines how many rows can fit in the hex area height
     let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
-    let gridHeight: number = parseInt(gridHeightRaw) - (2 * this.CELLROWMARGIN);
+    let gridHeight: number = parseInt(gridHeightRaw);
 
     let maxRows = Math.floor(
       ((gridHeight - this.CELL_MARGIN) / (this.CELL_MARGIN + this.CELL_WIDTH))
