@@ -611,8 +611,18 @@ class HexEditorWidget extends Widget {
     this.workspace.appendChild(this.scrollbar.node);
 
     this.setGridWidth(this.desiredGridWidth);
+    this.setWorkspaceVisible(false);
     this.configureAndFillGrid();
     this.node.addEventListener('wheel', this.handleWheelEvent.bind(this));
+  }
+
+  setWorkspaceVisible(state: boolean) {
+    if (state) {
+      this.workspace.style.visibility = 'visible';
+    }
+    else {
+      this.workspace.style.visibility = 'hidden';
+    }
   }
 
   // Set number of bytes per page row
@@ -691,6 +701,7 @@ class HexEditorWidget extends Widget {
 
     // Set the filename display
     this.fileLabel.innerText = 'File: ' + this.manager.getCurrentFilename();
+    this.setWorkspaceVisible(true);
 
     // Rebuild and populate grid
     this.configureAndFillGrid();
@@ -746,9 +757,12 @@ class HexEditorWidget extends Widget {
       return;
     }
 
-    this.setManagerPageMetrics()
-    this.manager.setPositionOnReflow();
-    this.scrollbar.setPosition(this.manager.position);
+    this.setManagerPageMetrics();
+    this.manager.dragCursor();
+    // TODO automatic resizing is disabled, so we don't
+    // reflow on grid resize anymore, finish later
+    // this.manager.setPositionOnReflow();
+    // this.scrollbar.setPosition(this.manager.position);
     this.configureAndFillGrid();
   }
 
