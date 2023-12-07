@@ -108,21 +108,17 @@
 }
 
 .hexlab_grid_width_lbl {
-  margin: 8px 4px 0px 8px;
+  margin: 0px 4px 0px 8px;
   color: --jp-ui-inverse-font-color0;
   text-wrap: nowrap;
   text-overflow: clip;
-  text-align: center;
-  vertical-align: middle;
 }
 
 .hexlab_grid_count_lbl {
-  margin: 8px 4px 0px 4px;
+  margin: 0px 4px 0px 4px;
   color: --jp-ui-inverse-font-color0;
   text-wrap: nowrap;
   text-overflow: clip;
-  text-align: center;
-  vertical-align: middle;
 }
 
 .hexlab_decrease_grid_width_btn {
