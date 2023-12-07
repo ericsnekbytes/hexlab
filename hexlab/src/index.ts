@@ -327,6 +327,7 @@ class HexScrollBar {
   // TODO find a better way for these
   static GRIP_EDGE_SIZE = 8;
   static GRIP_MARGIN = 2;
+  static GRIP_PT2_ADDED_HEIGHT = 8;
   // ........
 
   manager: any;
@@ -338,10 +339,24 @@ class HexScrollBar {
     scrollBar.classList.add('hexlab_scrollbar');
     this.scrollBar = scrollBar;
 
+    // The Grip is shaped like a half circle plus
+    // two squares plus another half circle
+
+    // The grip top (circle/half shows on top)
     const scrollGrip = document.createElement('div');
     scrollGrip.classList.add('hexlab_scroll_grip');
     scrollBar.appendChild(scrollGrip);
     this.scrollGrip = scrollGrip;
+
+    // The middle (rectangle) part
+    const scrollGripPt2 = document.createElement('div');
+    scrollGripPt2.classList.add('hexlab_scroll_grip_pt2');
+    this.scrollGrip.appendChild(scrollGripPt2);
+
+    // The grip bottom (circle/half shows on bottom)
+    const scrollGripPt3 = document.createElement('div');
+    scrollGripPt3.classList.add('hexlab_scroll_grip_pt3');
+    scrollGripPt2.appendChild(scrollGripPt3);
   }
 
   get node(): HTMLElement {
@@ -372,7 +387,11 @@ class HexScrollBar {
 
     let scrollHeight = scrollbarRect.height;
 
-    let maxScrollInScrollbarRelativeCoords = scrollHeight - HexScrollBar.GRIP_EDGE_SIZE - HexScrollBar.GRIP_MARGIN;
+    let maxScrollInScrollbarRelativeCoords = (
+      scrollHeight - HexScrollBar.GRIP_EDGE_SIZE
+      - HexScrollBar.GRIP_MARGIN
+      - HexScrollBar.GRIP_PT2_ADDED_HEIGHT
+    );
     return maxScrollInScrollbarRelativeCoords;
   }
 
@@ -729,7 +748,7 @@ class HexEditorWidget extends Widget {
     let gridHeight: number = parseInt(gridHeightRaw);
 
     let maxRows = Math.floor(
-      ((gridHeight - this.CELL_MARGIN) / (this.CELL_MARGIN + this.CELL_WIDTH))
+      ((gridHeight) / (this.CELL_MARGIN + this.CELL_WIDTH))
     )
 
     return maxRows;
@@ -1146,6 +1165,7 @@ class HexEditorWidget extends Widget {
 
           // Create the hex cell layout item
           let hexCell: any = document.createElement('div');
+          hexCell.classList.add('hexlab_hex_byte');
           hexCell.classList.add('hexlab_hex_placeholder_byte');
 
           // Append the cell to the layout row
@@ -1154,6 +1174,7 @@ class HexEditorWidget extends Widget {
           // Add corresponding text preview cell for this byte
           let previewCell: any = document.createElement('div');
           previewCell.classList.add('hexlab_preview_placeholder_cell');
+          previewCell.classList.add('hexlab_preview_cell');
           previewCell.metadata = {
             byteIndex: bytePosition
           }

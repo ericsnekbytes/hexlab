@@ -199,19 +199,7 @@
 }
 
 .hexlab_hex_placeholder_byte {
-  height: var(--jp-hexlab-cell-height);
-  width: var(--jp-hexlab-cell-height);
-  margin: 0px 4px 0px 4px;
   visibility: hidden;
-  display: inline-block;
-  text-align: center;
-  vertical-align: middle;
-  border-radius: 2px;
-  background-color: var(--jp-layout-color3);
-  color: --jp-ui-font-color0;
-  overflow: hidden;
-  flex-shrink: 0;
-  font-family: monospace;
 }
 
 .hexlab_address_grid {
@@ -280,20 +268,7 @@
 }
 
 .hexlab_preview_placeholder_cell {
-  height: var(--jp-hexlab-cell-height);
-  width: 10px;
-  margin: 0px 4px 0px 4px;
   visibility: hidden;
-  display: inline-block;
-  text-align: center;
-  vertical-align: middle;
-  border-radius: 2px;
-  background-color: var(--jp-layout-color3);
-  color: --jp-ui-font-color0;
-  overflow: hidden;
-  flex-shrink: 0;
-  font-family: monospace;
-  flex-grow: 1;
 }
 
 .hexlab_root_container > input {
@@ -302,7 +277,7 @@
 
 .hexlab_scrollbar {
   width: 12px;
-  height: calc(100% - var(--jp-hexlab-ui-margin));
+  height: calc(100% - var(--jp-hexlab-ui-margin) - var(--jp-hexlab-ui-margin));
   border-radius: 2px;
   background-color: var(--jp-layout-color1);
   display: inline-block;
@@ -317,8 +292,34 @@
   height: 8px;
   border-radius: 8px;
   margin: 2px;
-  background-color: #22ff22;
+  background-color: var(--jp-layout-color4);
   position: relative;
+  /* top: 2px;
+  left: 2px; */
+  user-select: none;
+}
+
+.hexlab_scroll_grip_pt2 {
+  width: 8px;
+  height: 16px;
+  /* border-radius: 8px; */
+  /* margin: 2px; */
+  position: absolute;
+  margin-top: 4px;
+  background-color: var(--jp-layout-color4);
+  /* position: relative; */
+  /* top: 2px;
+  left: 2px; */
+  user-select: none;
+}
+
+.hexlab_scroll_grip_pt3 {
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+  position: absolute;
+  margin-top: 12px;
+  background-color: var(--jp-layout-color4);
   /* top: 2px;
   left: 2px; */
   user-select: none;
