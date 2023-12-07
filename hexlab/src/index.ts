@@ -690,13 +690,14 @@ class HexEditorWidget extends Widget {
   // Remove all display state for the current file, reset view
   resetEditorState() {
     this.clearGrid();
+    this.setWorkspaceVisible(false);
 
     this.scrollbar.setGripPosition(this.scrollbar.getMinGripScroll());
     this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
   }
 
   async startFileLoad() {
-    console.log('[HexLab] ******** Opening File ********');
+    console.log('[HexLab] ******** Handling File Selection Change ********');
 
     // Obtain the file path
     debugLog('[Hexlab] File list');
@@ -705,7 +706,7 @@ class HexEditorWidget extends Widget {
     if (this.openInputHidden.files.length > 0) {
       fileData = this.openInputHidden.files[0];
     } else {
-      console.log('[Hexlab] Error, no file selected');
+      console.log('[Hexlab] No file selected');
       return;
     }
 
@@ -717,6 +718,9 @@ class HexEditorWidget extends Widget {
   handleFileLoadSuccess() {
     // Success, repopulate the view
     debugLog('[HexLab] ******** Handle file load success ********');
+
+    // Clear the list of files since we've already handled it
+    this.openInputHidden.value = null;
 
     // Set the filename display
     this.fileLabel.innerText = 'File: ' + this.manager.getCurrentFilename();
