@@ -19,8 +19,6 @@ import { Panel, Widget } from '@lumino/widgets';
 
 const DEBUG = true;
 
-//import ResizeObserver from 'resize-observer-polyfill';
-
 function debugLog(message: any) {
   if (DEBUG) {
     console.log(message);
@@ -285,6 +283,15 @@ class HexManager {
     }
   }
 
+  getRowCountForPage() {
+    // Return actual rows needed for this page (this may
+    // be a partial page needing less than max rows)
+    let range = this.getPageByteRangeInclusive();
+    let byteCountForPage = range[1] - range[0] + 1;
+    let actualRowsNeeded = Math.ceil(1.0 * byteCountForPage / this.getMaxCellCountClamped());
+    return actualRowsNeeded;
+  }
+
   async openFile(fileData: any) {
     console.log('[HexLab] ******** Opening File ********');
 
@@ -317,7 +324,6 @@ class HexManager {
       return;
     }
   }
-
 }
 
 class HexScrollBar {
@@ -325,9 +331,7 @@ class HexScrollBar {
   scrollGrip: HTMLElement;
 
   // TODO find a better way for these
-  static GRIP_EDGE_SIZE = 8;
-  static GRIP_MARGIN = 2;
-  static GRIP_PT2_ADDED_HEIGHT = 8;
+  static GRIP_TOTAL_DIMENSIONS = 28
   // ........
 
   manager: any;
@@ -368,8 +372,7 @@ class HexScrollBar {
   }
 
   getMinGripScroll() {
-
-    // TODO switched to grip with margin with relative positioning,
+    // Switched to grip with margin with relative positioning,
     // so the top of the grip/min grip position should be 0 (0 means
     // relative to its position in normal flow, which would already
     // be offset from the scrollbar/parent because of the margin)
@@ -388,9 +391,7 @@ class HexScrollBar {
     let scrollHeight = scrollbarRect.height;
 
     let maxScrollInScrollbarRelativeCoords = (
-      scrollHeight - HexScrollBar.GRIP_EDGE_SIZE
-      - HexScrollBar.GRIP_MARGIN
-      - HexScrollBar.GRIP_PT2_ADDED_HEIGHT
+      scrollHeight - HexScrollBar.GRIP_TOTAL_DIMENSIONS
     );
     return maxScrollInScrollbarRelativeCoords;
   }
@@ -483,8 +484,11 @@ class HexEditorWidget extends Widget {
   addressGrid: HTMLElement;
   hexGrid: HTMLElement;
   previewGrid: HTMLElement;
+  scrollControls: HTMLElement;
   scrollbar: HexScrollBar;
   scrollGrip: any;
+  scrollPageUp: any;
+  scrollPageDown: any;
   mouseListenerAttached = false;
   boundListener: any;
   lastGridFillTimestamp: any = new Date();
@@ -494,7 +498,7 @@ class HexEditorWidget extends Widget {
   // resizing and reflow-ability. Until then, sizing will be fixed (at a user
   // specified byte width) and responsiblity for resizing will be ceded to
   // the user (with controls for manually increasing/decreasing byte width).
-  desiredGridWidth = 16;
+  desiredGridWidth = 10;
   // ////////
 
   gridResizeChecker: any;
@@ -613,6 +617,9 @@ class HexEditorWidget extends Widget {
     this.previewGrid = document.createElement('div');
     this.previewGrid.classList.add('hexlab_preview_grid');
 
+    this.scrollControls = document.createElement('div');
+    this.scrollControls.classList.add('hexlab_scroll_controls');
+
     // Data scrolling is handled manually via this scrollbar.
     // This is not "true" scrolling (of a long element with overflow),
     // the scrollbar only tracks a position in the user's data, where
@@ -625,9 +632,24 @@ class HexEditorWidget extends Widget {
     this.scrollGrip = this.scrollbar.grip;  // TODO refactor access
     this.boundListener = this.handleScrollGripDragMove.bind(this)
     this.scrollGrip.addEventListener('mousedown', this.handleScrollGripDragStart.bind(this));
+    this.scrollControls.appendChild(this.scrollbar.node);
+
+    this.scrollPageUp = document.createElement('div');
+    this.scrollPageUp.classList.add('hexlab_scroll_pageup');
+    this.scrollPageUp.addEventListener('click', this.handleScrollPageUp.bind(this));
+    this.scrollPageUp.innerText = '\u{25b2}';
+    this.scrollControls.appendChild(this.scrollPageUp);
+
+    this.scrollPageDown = document.createElement('div');
+    this.scrollPageDown.classList.add('hexlab_scroll_pagedown');
+    this.scrollPageDown.addEventListener('click', this.handleScrollPageDown.bind(this));
+    this.scrollPageDown.innerText = '\u{25bc}';
+    this.scrollControls.appendChild(this.scrollPageDown);
+
     this.workspace.appendChild(this.hexGrid);
     this.workspace.appendChild(this.previewGrid);
-    this.workspace.appendChild(this.scrollbar.node);
+    this.workspace.appendChild(this.scrollControls);
+    // this.workspace.appendChild(this.scrollbar.node);
 
     this.setGridWidth(this.desiredGridWidth);
     this.setWorkspaceVisible(false);
@@ -663,6 +685,38 @@ class HexEditorWidget extends Widget {
   handleGridWidthIncrease() {
     debugLog('[HexLab] Increase grid width');
     this.setGridWidth(this.desiredGridWidth + 1);
+  }
+
+  handleScrollPageUp() {
+    console.log('[HexLab] Request page up');
+    let pageRowsMinusOne = Math.max(0, this.manager.getMaxRowCountClamped() - 1);
+    this.manager.position = (
+      this.manager.getClosestRowStartForPosition(
+        this.manager.clampPositionToValidByteIndices(
+          this.manager.position
+          - (pageRowsMinusOne * this.manager.getMaxCellCountClamped())
+        )
+      )
+    )
+    this.scrollbar.setPosition(this.manager.position);
+    this.manager.dragCursor();
+    this.configureAndFillGrid();
+  }
+
+  handleScrollPageDown() {
+    console.log('[HexLab] Request page down');
+    let pageRowsMinusOne = Math.max(0, this.manager.getMaxRowCountClamped() - 1);
+    this.manager.position = (
+      this.manager.getClosestRowStartForPosition(
+        this.manager.clampPositionToValidByteIndices(
+          this.manager.position
+          + (pageRowsMinusOne * this.manager.getMaxCellCountClamped())
+        )
+      )
+    )
+    this.scrollbar.setPosition(this.manager.position);
+    this.manager.dragCursor();
+    this.configureAndFillGrid();
   }
 
   handleCloseFile() {
