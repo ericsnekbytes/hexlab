@@ -166,7 +166,7 @@
 
 .hexlab_workspace {
   width: 100%;
-  height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
+  height: calc(100% - (var(--jp-hexlab-root-border-width) * 2) - var(--jp-hexlab-ui-margin));
   /* border: solid 1px yellow; */
   border-radius: 2px;
   display: flex;
@@ -176,7 +176,8 @@
 
 .hexlab_hex_grid {
   /* width: calc(100%); */
-  height: calc(100% - var(--jp-hexlab-ui-margin));
+  height: 100%;
+  /* height: calc(100% - var(--jp-hexlab-ui-margin)); */
   border-radius: 2px;
   margin: 0px var(--jp-hexlab-ui-margin) 0px 0px;
   padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
@@ -187,7 +188,7 @@
 .hexlab_hex_row {
   height: var(--jp-hexlab-cell-height);
   width: calc(100%);
-  margin: 0px 0px var(--jp-hexlab-ui-margin) 0px;
+  margin: 0px 0px var(--jp-hexlab-cell-margin) 0px;
   display: flex;
   align-items: start;
 }
@@ -212,7 +213,8 @@
 }
 
 .hexlab_address_grid {
-  height: calc(100% - var(--jp-hexlab-ui-margin));
+  height: 100%;
+  /* height: calc(100% - var(--jp-hexlab-ui-margin)); */
   border-radius: 2px;
   padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
   margin: 0px var(--jp-hexlab-ui-margin) 0px 0px;
@@ -246,7 +248,8 @@
 }
 
 .hexlab_preview_grid {
-  height: calc(100% - var(--jp-hexlab-ui-margin));
+  height: 100%;
+  /* height: calc(100% - var(--jp-hexlab-ui-margin)); */
   border-radius: 2px;
   padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
   background-color: var(--jp-layout-color2);
@@ -285,13 +288,15 @@
 }
 
 .hexlab_scroll_controls {
-  height: calc(100% - var(--jp-hexlab-ui-margin));
+  height: 100%;
+  /* height: calc(100% - var(--jp-hexlab-ui-margin)); */
   display: flex;
   flex-direction: column;
 }
 
 .hexlab_scrollbar {
   width: 12px;
+  min-height: 32px;
   /* height: calc(100% - var(--jp-hexlab-ui-margin) - var(--jp-hexlab-ui-margin)); */
   border-radius: 2px;
   flex-grow: 1;

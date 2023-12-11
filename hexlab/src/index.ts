@@ -599,7 +599,7 @@ class HexEditorWidget extends Widget {
     this.workspace = document.createElement('div');
     this.workspace.classList.add('hexlab_workspace');
     this.gridResizeChecker = new ResizeObserver(this.handleGridResize.bind(this));
-    this.gridResizeChecker.observe(this.workspace);
+    this.gridResizeChecker.observe(this.node);
     this.mainArea.appendChild(this.workspace);
 
     // Add a column on the grid for data addresses
@@ -836,6 +836,7 @@ class HexEditorWidget extends Widget {
 
     this.setManagerPageMetrics();
     this.manager.dragCursor();
+    this.scrollbar.setPosition(this.manager.position);
     // TODO automatic resizing is disabled, so we don't
     // reflow on grid resize anymore, finish later
     // this.manager.setPositionOnReflow();
