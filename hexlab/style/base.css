@@ -5,8 +5,9 @@
 */
 
 .hexlab_root_widget {
-  --jp-hexlab-debug-border-width: 1px;
-  --jp-hexlab-root-border-width: var(--jp-hexlab-debug-border-width);
+  --jp-hexlab-debug-border-width: 0px;
+  /* --jp-hexlab-root-border-width: var(--jp-hexlab-debug-border-width); */
+  --jp-hexlab-root-border-width: 0px;
   --jp-hexlab-ui-margin: 8px;
   --jp-hexlab-cell-height: 16px;
   --jp-hexlab-cell-margin: var(--jp-hexlab-ui-margin);
@@ -15,7 +16,7 @@
   background-color: var(--jp-layout-color1);
   font-family: var(--jp-ui-font-family);
   color: var(--jp-ui-font-color0);
-  border: solid 1px red;
+  /* border: solid 1px red; */
   margin: 0px;
   padding: 0px;
 }
@@ -24,7 +25,7 @@
   width: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
   height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
   background-color: var(--jp-layout-color1);
-  border: solid 1px orange;
+  /* border: solid 1px orange; */
   display: flex;
   flex-direction: column;
 }
@@ -155,10 +156,18 @@
   user-select: none;
 }
 
+.hexlab_cursor {
+  /* color: var(--jp-inverse-font-color1); */
+  /* border-color: var(--jp-layout-color1);
+  border-bottom: 1px solid; */
+  /* background-color: var(--jp-layout-color1); */
+  background-color: #f37626;
+}
+
 .hexlab_workspace {
   width: 100%;
   height: calc(100% - calc(var(--jp-hexlab-root-border-width) * 2));
-  border: solid 1px yellow;
+  /* border: solid 1px yellow; */
   border-radius: 2px;
   display: flex;
   align-items: start;

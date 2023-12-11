@@ -1059,10 +1059,11 @@ class HexEditorWidget extends Widget {
           };
           if (cellIndex == 0) {
             cell.style['margin-left'] = '0';
-            cell.style['background-color'] = '#2fc900';
+            // cell.style['background-color'] = '#2fc900';
           }
           if (byteIndex == this.manager.cursor) {
-            cell.style['background-color'] = '#c200a8';
+            // cell.style['background-color'] = '#c200a8';
+            cell.classList.add('hexlab_cursor');
           }
 
           cell.innerText = charmap[left_hex] + charmap[right_hex];
@@ -1196,12 +1197,12 @@ class HexEditorWidget extends Widget {
           // Do any cell post processing here
           if (cellPosition == maxCellCountClamped - 1 || bytePosition == this.manager.fileSize - 1) {
             // debugLog('[Hexlab] last cell in row at ' + bytePosition);
-            hexCell.style['background-color'] = 'red';
+            // hexCell.style['background-color'] = 'red';
             hexCell.style['margin-right'] = '0px';
           }
           if (bytePosition == this.manager.fileSize - 1) {
             // debugLog('[Hexlab] Last file byte! ' + bytePosition);
-            hexCell.style['background-color'] = 'blue';
+            // hexCell.style['background-color'] = 'blue';
           }
 
           // Append the cell to the layout row
