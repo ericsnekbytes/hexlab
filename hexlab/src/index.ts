@@ -504,8 +504,8 @@ class HexEditorWidget extends Widget {
   gridResizeChecker: any;
 
   CELLROWMARGIN = 8;
-  CELL_WIDTH = 16;  
-  CELL_MARGIN = 8;
+  CELL_WIDTH = 24;  
+  CELL_MARGIN = 2;
 
   constructor() {
     super();
