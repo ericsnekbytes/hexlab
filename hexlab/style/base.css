@@ -183,6 +183,7 @@
   padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
   background-color: var(--jp-layout-color2);
   /* overflow: hidden; */
+  user-select: none;
 }
 
 .hexlab_hex_row {
@@ -253,6 +254,7 @@
   border-radius: 2px;
   padding: 0px 0px 0px var(--jp-hexlab-ui-margin);
   background-color: var(--jp-layout-color2);
+  user-select: none;
 }
 
 .hexlab_preview_container {

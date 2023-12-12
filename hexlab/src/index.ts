@@ -854,6 +854,16 @@ class HexEditorWidget extends Widget {
     this.configureAndFillGrid();
   }
 
+  handlePreviewClick(event: any) {
+    debugLog('[HexLab] ******** Preview Click ********');
+    this.printBasicDiagnosticInfo();
+    debugLog(event);
+
+    let target = event.target;
+    this.manager.cursor = target.metadata.byteIndex;
+    this.configureAndFillGrid();
+  }
+
   handleWheelEvent(event: any) {
     debugLog('[Hexlab] ******** Wheel event ********')
     debugLog(event)
@@ -1077,6 +1087,10 @@ class HexEditorWidget extends Widget {
           else {
             previewText = '.'
           }
+          if (byteIndex == this.manager.cursor) {
+            // cell.style['background-color'] = '#c200a8';
+            previewCell.classList.add('hexlab_cursor');
+          }
           previewCell.innerText = previewText;
         }
       }
@@ -1195,7 +1209,7 @@ class HexEditorWidget extends Widget {
           hexCell.metadata = {
             byteIndex: bytePosition
           }
-          hexCell.addEventListener('click', this.handleCellClick.bind(this));
+          hexCell.addEventListener('mousedown', this.handleCellClick.bind(this));
 
           // Do any cell post processing here
           if (cellPosition == maxCellCountClamped - 1 || bytePosition == this.manager.fileSize - 1) {
@@ -1217,6 +1231,7 @@ class HexEditorWidget extends Widget {
           previewCell.metadata = {
             byteIndex: bytePosition
           }
+          previewCell.addEventListener('mousedown', this.handlePreviewClick.bind(this));
 
           // Append the preview cell to the preview row
           currentPreview.appendChild(previewCell)
