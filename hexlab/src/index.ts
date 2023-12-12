@@ -479,6 +479,7 @@ class HexEditorWidget extends Widget {
   gridWidthControls: HTMLElement;
   gridWidthLabel: HTMLElement;
   gridWidthCountLbl: HTMLElement;
+  currentByteLabel: HTMLElement;
   decreaseGridWidthBtn: HTMLElement;
   increaseGridWidthBtn: HTMLElement;
   addressGrid: HTMLElement;
@@ -594,6 +595,15 @@ class HexEditorWidget extends Widget {
     this.gridWidthCountLbl.classList.add('hexlab_grid_count_lbl');
     this.gridWidthCountLbl.innerText = '()';
     this.gridWidthControls.appendChild(this.gridWidthCountLbl)
+
+    let divider = document.createElement('div');
+    divider.classList.add('hexlab_horizontal_divider');
+    this.gridWidthControls.appendChild(divider);
+
+    this.currentByteLabel = document.createElement('div');
+    this.currentByteLabel.classList.add('hexlab_grid_count_lbl');
+    this.currentByteLabel.innerText = 'Byte 0-Index: 0x0 (0)';
+    this.gridWidthControls.appendChild(this.currentByteLabel)
 
     // Define a container to hold the hex grid and related controls
     this.workspace = document.createElement('div');
@@ -748,6 +758,7 @@ class HexEditorWidget extends Widget {
 
     this.scrollbar.setGripPosition(this.scrollbar.getMinGripScroll());
     this.fileLabel.innerHTML = '&lt;<i>No File</i>&gt;';
+    this.currentByteLabel.innerText = 'Byte 0-Index: 0x0 (0)'
   }
 
   async startFileLoad() {
@@ -1120,6 +1131,7 @@ class HexEditorWidget extends Widget {
     this.setManagerPageMetrics()
 
     this.manager.dragCursor();
+    this.currentByteLabel.innerText = 'Byte 0-Index: 0x' + this.manager.cursor.toString(16) + ' (' + this.manager.cursor + ')';
 
     // Show some basic stats
     this.printBasicDiagnosticInfo();
