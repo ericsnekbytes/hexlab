@@ -699,7 +699,7 @@ class HexEditorWidget extends Widget {
       )
     )
     this.scrollbar.setPosition(this.manager.position);
-    this.manager.dragCursor();
+    // this.manager.dragCursor();
     this.configureAndFillGrid();
   }
 
@@ -715,7 +715,7 @@ class HexEditorWidget extends Widget {
       )
     )
     this.scrollbar.setPosition(this.manager.position);
-    this.manager.dragCursor();
+    // this.manager.dragCursor();
     this.configureAndFillGrid();
   }
 
@@ -835,7 +835,7 @@ class HexEditorWidget extends Widget {
     }
 
     this.setManagerPageMetrics();
-    this.manager.dragCursor();
+    // this.manager.dragCursor();
     this.scrollbar.setPosition(this.manager.position);
     // TODO automatic resizing is disabled, so we don't
     // reflow on grid resize anymore, finish later
@@ -1104,6 +1104,8 @@ class HexEditorWidget extends Widget {
 
     // Make the manager aware of the grid space
     this.setManagerPageMetrics()
+
+    this.manager.dragCursor();
 
     // Show some basic stats
     this.printBasicDiagnosticInfo();
