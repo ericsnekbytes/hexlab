@@ -14,7 +14,7 @@ Currently, you can use the [command palette](https://jupyterlab.readthedocs.io/e
 
 Since the extension isn't released yet, you can build and run it
 as you would any in-development JupyterLab extension as noted in
-the extension tutorial.
+the [extension tutorial](https://jupyterlab.readthedocs.io/en/latest/extension/extension_tutorial.html#extension-tutorial).
 
 ## TODO
 
