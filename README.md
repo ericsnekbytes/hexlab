@@ -6,6 +6,9 @@ Development is in-progress.
 
 ![Hex Editor Extension](https://github.com/ericsnekbytes/hexlab/assets/104786633/0a861480-201f-4c9f-b60b-9684dfcd80f6)
 
+## Usage
+
+Currently, you can use the [command palette](https://jupyterlab.readthedocs.io/en/stable/user/commands.html#command-palette) and search for "hex", then click "Hex Editor".
 
 ## TODO
 
