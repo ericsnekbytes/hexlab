@@ -148,6 +148,36 @@
   user-select: none;
 }
 
+.hexlab_drag_grid_width_btn {
+  height: 20px;
+  width: 24px;
+  min-width: 24px;
+  margin: var(--jp-hexlab-ui-margin) calc(var(--jp-hexlab-ui-margin) / 4) var(--jp-hexlab-ui-margin) calc(var(--jp-hexlab-ui-margin) / 4);
+  padding-bottom: 4px;
+  /* text-align: center;
+  vertical-align: middle; */
+  border-radius: 2px;
+  /* background-color: #2296f3; */
+  background-color: var(--jp-layout-color4);
+  color: #212121;
+  user-select: none;
+  font-size: var(--jp-ui-font-size3);
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.hexlab_drag_grid_width_btn div {
+  flex-grow: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  /* margin: auto; */
+  /* text-align: center;
+  vertical-align: center; */
+}
+
 .hexlab_increase_grid_width_btn {
   --jp-hexlab-open-button-width: 150px;
   --jp-hexlab-open-button-height: 30px;

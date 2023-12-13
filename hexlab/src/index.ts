@@ -481,6 +481,7 @@ class HexEditorWidget extends Widget {
   gridWidthCountLbl: HTMLElement;
   currentByteLabel: HTMLElement;
   decreaseGridWidthBtn: HTMLElement;
+  dragGridWidthBtn: HTMLElement;
   increaseGridWidthBtn: HTMLElement;
   addressGrid: HTMLElement;
   hexGrid: HTMLElement;
@@ -491,6 +492,10 @@ class HexEditorWidget extends Widget {
   scrollPageUp: any;
   scrollPageDown: any;
   mouseListenerAttached = false;
+  gridWidthListenerAttached = false;
+  gridWidthListener: any;
+  gridWidthDragStartWidth = 0;
+  gridWidthDragStartPos = 0;
   boundListener: any;
   lastGridFillTimestamp: any = new Date();
   // ////////
@@ -584,6 +589,13 @@ class HexEditorWidget extends Widget {
     this.decreaseGridWidthBtn.innerText = '\u{25c0}';
     this.decreaseGridWidthBtn.addEventListener('click', this.handleGridWidthDecrease.bind(this), {passive: true});
     this.gridWidthControls.appendChild(this.decreaseGridWidthBtn)
+    // ....
+    this.dragGridWidthBtn = document.createElement('div');
+    this.dragGridWidthBtn.classList.add('hexlab_drag_grid_width_btn');
+    this.dragGridWidthBtn.innerHTML= '<div>\u{2b0c}</div>';
+    this.dragGridWidthBtn.addEventListener('mousedown', this.handleGridWidthDragStart.bind(this), {passive: true});
+    this.gridWidthListener = this.handleGridWidthDragMove.bind(this)
+    this.gridWidthControls.appendChild(this.dragGridWidthBtn)
     // ....
     this.increaseGridWidthBtn = document.createElement('div');
     this.increaseGridWidthBtn.classList.add('hexlab_increase_grid_width_btn');
@@ -1026,6 +1038,67 @@ class HexEditorWidget extends Widget {
       window.addEventListener('mouseup', this.boundListener, false);
       window.addEventListener('mousemove', this.boundListener, false);
       this.mouseListenerAttached = true;
+      debugLog('[Hexlab] Attached!');
+    }
+  }
+
+  handleGridWidthDragMove(event: any) {
+    debugLog('[Hexlab] ******** Grid width drag mouse event! ********');
+
+    // // Do nothing for empty files
+    // if (this.manager.isEmpty()) {
+    //   return;
+    // }
+
+    // Handles subsequent mouse events until a mouseup
+    if (event.type == 'mousemove') {
+      debugLog('[Hexlab] -- Move event found --')
+
+      let pageX = event.pageX;
+      debugLog('[Hexlab]   pageX');
+      debugLog(pageX);
+
+      let CELL_WIDTH = 26;
+
+      let displacement = pageX - this.gridWidthDragStartPos;
+      let cellsForWidth = Math.floor(Math.abs(displacement) / CELL_WIDTH);
+
+      let newWidth = this.desiredGridWidth;
+      if (displacement < 0) {
+        newWidth = this.gridWidthDragStartWidth - cellsForWidth;
+      }
+      else {
+        newWidth = this.gridWidthDragStartWidth + cellsForWidth;
+      }
+
+      if (newWidth != this.desiredGridWidth) {
+        this.setGridWidth(newWidth);
+      }
+    }
+    if (event.type == 'mouseup') {
+      debugLog('[Hexlab] -- mouseUp found! --')
+
+      // Always fill grid on mouseup to ensure correct ending state
+      this.configureAndFillGrid();
+      window.removeEventListener('mouseup', this.gridWidthListener, false);
+      window.removeEventListener('mousemove', this.gridWidthListener, false);
+      this.gridWidthListenerAttached = false;
+    }
+  }
+
+  handleGridWidthDragStart(event: any) {
+    debugLog('[Hexlab] ******** Grid width drag start! ********');
+    // if (this.manager.isEmpty()) {
+    //   return;
+    // }
+
+    this.printBasicDiagnosticInfo();
+    if(!this.gridWidthListenerAttached) {
+      window.addEventListener('mouseup', this.gridWidthListener, false);
+      window.addEventListener('mousemove', this.gridWidthListener, false);
+      this.gridWidthListenerAttached = true;
+      this.gridWidthDragStartWidth = this.desiredGridWidth;
+      this.gridWidthDragStartPos = event.pageX;
       debugLog('[Hexlab] Attached!');
     }
   }
