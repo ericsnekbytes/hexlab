@@ -20,6 +20,7 @@ the [extension tutorial](https://jupyterlab.readthedocs.io/en/latest/extension/e
 
 - [X] View local files
 - [X] Achieve compatibility with JupyterLab and Notebook 7
+- [ ] Basic editing
 - [ ] Data inspector/info panel
 - [ ] Context menu for viewing Jupyter root directory files
 - [ ] View files larger than system memory
