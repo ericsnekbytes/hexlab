@@ -592,7 +592,7 @@ class HexEditorWidget extends Widget {
     // ....
     this.dragGridWidthBtn = document.createElement('div');
     this.dragGridWidthBtn.classList.add('hexlab_drag_grid_width_btn');
-    this.dragGridWidthBtn.innerHTML= '<div>\u{2b0c}</div>';
+    this.dragGridWidthBtn.innerText= '\u{2b0c}';
     this.dragGridWidthBtn.addEventListener('mousedown', this.handleGridWidthDragStart.bind(this), {passive: true});
     this.gridWidthListener = this.handleGridWidthDragMove.bind(this)
     this.gridWidthControls.appendChild(this.dragGridWidthBtn)
