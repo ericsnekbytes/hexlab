@@ -10,6 +10,12 @@ Development is in-progress.
 
 Currently, you can use the [command palette](https://jupyterlab.readthedocs.io/en/stable/user/commands.html#command-palette) and search for "hex", then click "Hex Editor".
 
+## Installation
+
+Since the extension isn't released yet, you can build and run it
+as you would any in-development JupyterLab extension as noted in
+the extension tutorial.
+
 ## TODO
 
 - [X] View local files
@@ -19,9 +25,3 @@ Currently, you can use the [command palette](https://jupyterlab.readthedocs.io/e
 - [ ] View files larger than system memory
 - [ ] View remote files
 - [ ] Integrate with the MIME editor APIs
-
-## Installation
-
-Since the extension isn't released yet, you can build and run it
-as you would any in-development JupyterLab extension as noted in
-the extension tutorial.
