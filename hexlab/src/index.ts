@@ -470,13 +470,14 @@ class HexEditorWidget extends Widget {
   mainArea: HTMLElement;
   workspace: HTMLElement;
   topArea: HTMLElement;
+  bottomArea: HTMLElement;
   fileControls: HTMLElement;
   openButton: any;
   openInputHidden: any;
   clearFileButton: any;
   fileLabel: HTMLElement;
   topDivider: HTMLElement;
-  gridWidthControls: HTMLElement;
+  topAreaLowerRowControls: HTMLElement;
   gridWidthLabel: HTMLElement;
   gridWidthCountLbl: HTMLElement;
   currentByteLabel: HTMLElement;
@@ -496,7 +497,7 @@ class HexEditorWidget extends Widget {
   gridWidthListener: any;
   gridWidthDragStartWidth = 0;
   gridWidthDragStartPos = 0;
-  boundListener: any;
+  scrollDragListener: any;
   lastGridFillTimestamp: any = new Date();
   // ////////
   // HexLab has logic for automatic reflow/resizability depending on the
@@ -575,47 +576,42 @@ class HexEditorWidget extends Widget {
     this.topArea.appendChild(this.topDivider)
 
     // Controls for expanding/shrinking the displayed byte width
-    this.gridWidthControls = document.createElement('div');
-    this.gridWidthControls.classList.add('hexlab_grid_width_controls');
-    this.topArea.appendChild(this.gridWidthControls);
+    this.topAreaLowerRowControls = document.createElement('div');
+    this.topAreaLowerRowControls.classList.add('hexlab_grid_width_controls');
+    this.topArea.appendChild(this.topAreaLowerRowControls);
     // ....
     this.gridWidthLabel = document.createElement('div');
     this.gridWidthLabel.classList.add('hexlab_grid_width_lbl');
     this.gridWidthLabel.innerText = 'Bytes per row';
-    this.gridWidthControls.appendChild(this.gridWidthLabel)
+    this.topAreaLowerRowControls.appendChild(this.gridWidthLabel)
     // ....
     this.decreaseGridWidthBtn = document.createElement('div');
     this.decreaseGridWidthBtn.classList.add('hexlab_decrease_grid_width_btn');
     this.decreaseGridWidthBtn.innerText = '\u{25c0}';
     this.decreaseGridWidthBtn.addEventListener('click', this.handleGridWidthDecrease.bind(this), {passive: true});
-    this.gridWidthControls.appendChild(this.decreaseGridWidthBtn)
+    this.topAreaLowerRowControls.appendChild(this.decreaseGridWidthBtn)
     // ....
     this.dragGridWidthBtn = document.createElement('div');
     this.dragGridWidthBtn.classList.add('hexlab_drag_grid_width_btn');
     this.dragGridWidthBtn.innerText= '\u{2b0c}';
     this.dragGridWidthBtn.addEventListener('mousedown', this.handleGridWidthDragStart.bind(this), {passive: true});
     this.gridWidthListener = this.handleGridWidthDragMove.bind(this)
-    this.gridWidthControls.appendChild(this.dragGridWidthBtn)
+    this.topAreaLowerRowControls.appendChild(this.dragGridWidthBtn)
     // ....
     this.increaseGridWidthBtn = document.createElement('div');
     this.increaseGridWidthBtn.classList.add('hexlab_increase_grid_width_btn');
     this.increaseGridWidthBtn.innerText = '\u{25b6}';
     this.increaseGridWidthBtn.addEventListener('click', this.handleGridWidthIncrease.bind(this), {passive: true});
-    this.gridWidthControls.appendChild(this.increaseGridWidthBtn)
+    this.topAreaLowerRowControls.appendChild(this.increaseGridWidthBtn)
     // ....
     this.gridWidthCountLbl = document.createElement('div');
     this.gridWidthCountLbl.classList.add('hexlab_grid_count_lbl');
     this.gridWidthCountLbl.innerText = '()';
-    this.gridWidthControls.appendChild(this.gridWidthCountLbl)
-
+    this.topAreaLowerRowControls.appendChild(this.gridWidthCountLbl)
+    // ....
     let divider = document.createElement('div');
-    divider.classList.add('hexlab_horizontal_divider');
-    this.gridWidthControls.appendChild(divider);
-
-    this.currentByteLabel = document.createElement('div');
-    this.currentByteLabel.classList.add('hexlab_grid_count_lbl');
-    this.currentByteLabel.innerText = 'Byte 0-Index: 0x0 (0)';
-    this.gridWidthControls.appendChild(this.currentByteLabel)
+    divider.classList.add('hexlab_vertical_divider');
+    this.topAreaLowerRowControls.appendChild(divider);
 
     // Define a container to hold the hex grid and related controls
     this.workspace = document.createElement('div');
@@ -652,7 +648,7 @@ class HexEditorWidget extends Widget {
     // slice of data that's currently being viewed.
     this.scrollbar = new HexScrollBar(this.manager);
     this.scrollGrip = this.scrollbar.grip;  // TODO refactor access
-    this.boundListener = this.handleScrollGripDragMove.bind(this)
+    this.scrollDragListener = this.handleScrollGripDragMove.bind(this)
     this.scrollGrip.addEventListener('mousedown', this.handleScrollGripDragStart.bind(this));
     this.scrollControls.appendChild(this.scrollbar.node);
 
@@ -671,7 +667,23 @@ class HexEditorWidget extends Widget {
     this.workspace.appendChild(this.hexGrid);
     this.workspace.appendChild(this.previewGrid);
     this.workspace.appendChild(this.scrollControls);
-    // this.workspace.appendChild(this.scrollbar.node);
+
+    // Divider for a new row of top area controls
+    let dividerBottom = document.createElement('div');
+    dividerBottom.classList.add('hexlab_bottom_divider');
+    this.mainArea.appendChild(dividerBottom);
+
+    // Create a lower area for 
+    let bottomArea = document.createElement('div');
+    bottomArea.classList.add('hexlab_top_area');
+    this.mainArea.appendChild(bottomArea);
+    this.bottomArea = bottomArea;
+
+    // Cursor display
+    this.currentByteLabel = document.createElement('div');
+    this.currentByteLabel.classList.add('hexlab_current_byte_lbl');
+    this.currentByteLabel.innerText = 'Byte 0-Index: 0x0 (0)';
+    this.bottomArea.appendChild(this.currentByteLabel);
 
     this.setGridWidth(this.desiredGridWidth);
     this.setWorkspaceVisible(false);
@@ -996,8 +1008,8 @@ class HexEditorWidget extends Widget {
 
       // Always fill grid on mouseup to ensure correct ending state
       this.configureAndFillGrid();
-      window.removeEventListener('mouseup', this.boundListener, false);
-      window.removeEventListener('mousemove', this.boundListener, false);
+      window.removeEventListener('mouseup', this.scrollDragListener, false);
+      window.removeEventListener('mousemove', this.scrollDragListener, false);
       this.mouseListenerAttached = false;
     }
   }
@@ -1035,8 +1047,8 @@ class HexEditorWidget extends Widget {
 
     this.printBasicDiagnosticInfo();
     if(!this.mouseListenerAttached) {
-      window.addEventListener('mouseup', this.boundListener, false);
-      window.addEventListener('mousemove', this.boundListener, false);
+      window.addEventListener('mouseup', this.scrollDragListener, false);
+      window.addEventListener('mousemove', this.scrollDragListener, false);
       this.mouseListenerAttached = true;
       debugLog('[Hexlab] Attached!');
     }
@@ -1423,7 +1435,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: 'hexlab:plugin',
   autoStart: true,
   requires: [ICommandPalette],
-  optional: [ILayoutRestorer, ILabShell, INotebookShell],
+  optional: [ILayoutRestorer, ILabShell, INotebookShell as any],
   activate: activate,
 };
 
