@@ -812,7 +812,11 @@ class HexEditorWidget extends Widget {
     this.openInputHidden.value = null;
 
     // Set the filename display
-    this.fileLabel.innerText = 'File: ' + this.manager.getCurrentFilename();
+    this.fileLabel.innerText = (
+      'File: ' + this.manager.getCurrentFilename()
+      + '\n' + this.manager.fileSize + ' (0x'
+      + this.manager.fileSize.toString(16) + ') bytes'
+    );
     this.setWorkspaceVisible(true);
 
     // Rebuild and populate grid
@@ -1216,7 +1220,10 @@ class HexEditorWidget extends Widget {
     this.setManagerPageMetrics()
 
     this.manager.dragCursor();
-    this.currentByteLabel.innerText = 'Byte 0-Index: 0x' + this.manager.cursor.toString(16) + ' (' + this.manager.cursor + ')';
+    this.currentByteLabel.innerText = (
+      'Byte 0-Index: 0x' + this.manager.cursor.toString(16)
+      + ' (' + this.manager.cursor + ')'
+    );
 
     // Show some basic stats
     this.printBasicDiagnosticInfo();
