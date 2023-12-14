@@ -95,8 +95,17 @@
   background-color: var(--jp-layout-color2);
 }
 
-.hexlab_horizontal_divider {
-  margin: 8px;
+.hexlab_vertical_divider {
+  margin: var(--jp-hexlab-ui-margin) 0px var(--jp-hexlab-ui-margin) var(--jp-hexlab-ui-margin);
+  /* width: 100%; */
+  /* height: 100%; */
+  flex-basis: 1px;
+  align-self: stretch;
+  background-color: var(--jp-layout-color2);
+}
+
+.hexlab_bottom_divider {
+  margin: 0px 0px var(--jp-hexlab-ui-margin) 0px;
   /* width: 100%; */
   /* height: 100%; */
   flex-basis: 1px;
@@ -129,6 +138,16 @@
   color: --jp-ui-inverse-font-color0;
   text-wrap: nowrap;
   text-overflow: clip;
+}
+
+.hexlab_current_byte_lbl {
+  margin: 0px calc(var(--jp-hexlab-ui-margin) / 4) var(--jp-hexlab-ui-margin) var(--jp-hexlab-ui-margin);
+  /* margin: 0px 4px 0px 4px; */
+  min-height: 20px;
+  color: --jp-ui-inverse-font-color0;
+  text-wrap: nowrap;
+  text-overflow: clip;
+  align-self: stretch;
 }
 
 .hexlab_decrease_grid_width_btn {
