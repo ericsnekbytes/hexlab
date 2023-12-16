@@ -468,7 +468,12 @@ class HexEditorWidget extends Widget {
   manager: HexManager;
 
   mainArea: HTMLElement;
+  workRegion: HTMLElement;
   workspace: HTMLElement;
+  inspectorArea: HTMLElement;
+  inspectorOpener: HTMLElement;
+  inspectorOpenerVisible = true;
+  inspector: HTMLElement;
   topArea: HTMLElement;
   bottomArea: HTMLElement;
   fileControls: HTMLElement;
@@ -613,12 +618,38 @@ class HexEditorWidget extends Widget {
     divider.classList.add('hexlab_vertical_divider');
     this.topAreaLowerRowControls.appendChild(divider);
 
+    // Create a container for the workspace and inspector panel
+    this.workRegion = document.createElement('div');
+    this.workRegion.classList.add('hexlab_work_region');
+    this.mainArea.appendChild(this.workRegion);
+
     // Define a container to hold the hex grid and related controls
     this.workspace = document.createElement('div');
     this.workspace.classList.add('hexlab_workspace');
     this.gridResizeChecker = new ResizeObserver(this.handleGridResize.bind(this));
     this.gridResizeChecker.observe(this.node);
-    this.mainArea.appendChild(this.workspace);
+    this.workRegion.appendChild(this.workspace);
+
+    // Define the data inspector layout, sits next to the workspace
+    this.inspectorArea = document.createElement('div');
+    this.inspectorArea.classList.add('hexlab_inspector_area');
+    this.workRegion.appendChild(this.inspectorArea);
+
+    // Define the inspector opener/collapser handle
+    this.inspectorOpener = document.createElement('div');
+    this.inspectorOpener.classList.add('hexlab_inspector_opener');
+    this.inspectorOpener.innerText= '>';
+    this.inspectorArea.appendChild(this.inspectorOpener);
+
+    // Define the data inspector
+    this.inspector = document.createElement('div');
+    this.inspector.classList.add('hexlab_inspector');
+    this.inspectorArea.appendChild(this.inspector);
+
+    // Inspector dummy content
+    let inspectorDummy = document.createElement('div');
+    inspectorDummy.classList.add('hexlab_inspector_dummy');
+    this.inspector.appendChild(inspectorDummy);
 
     // Add a column on the grid for data addresses
     this.addressGrid = document.createElement('div');
