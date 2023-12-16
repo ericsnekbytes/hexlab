@@ -471,6 +471,8 @@ class HexEditorWidget extends Widget {
   workRegion: HTMLElement;
   workspace: HTMLElement;
   inspectorArea: HTMLElement;
+  inspectorDragControls: HTMLElement;
+  inspectorDragGrip: HTMLElement;
   inspectorOpener: HTMLElement;
   inspectorOpenerVisible = true;
   inspector: HTMLElement;
@@ -635,11 +637,29 @@ class HexEditorWidget extends Widget {
     this.inspectorArea.classList.add('hexlab_inspector_area');
     this.workRegion.appendChild(this.inspectorArea);
 
+    // Inspector panel divider
+    this.inspectorDragControls = document.createElement('div');
+    this.inspectorDragControls.classList.add('hexlab_inspector_drag_controls');
+    this.inspectorArea.appendChild(this.inspectorDragControls);
+
+    // Inspector panel divider grip
+    this.inspectorDragGrip = document.createElement('div');
+    this.inspectorDragGrip.classList.add('hexlab_inspector_drag_grip');
+    this.inspectorDragControls.appendChild(this.inspectorDragGrip);
+    // ....
+    let inspectorDragGripPt2 = document.createElement('div');
+    inspectorDragGripPt2.classList.add('hexlab_inspector_drag_grip_pt2');
+    this.inspectorDragGrip.appendChild(inspectorDragGripPt2);
+    // ....
+    let inspectorDragGripPt3 = document.createElement('div');
+    inspectorDragGripPt3.classList.add('hexlab_inspector_drag_grip_pt3');
+    inspectorDragGripPt2.appendChild(inspectorDragGripPt3);
+
     // Define the inspector opener/collapser handle
     this.inspectorOpener = document.createElement('div');
     this.inspectorOpener.classList.add('hexlab_inspector_opener');
     this.inspectorOpener.innerText= '>';
-    this.inspectorArea.appendChild(this.inspectorOpener);
+    // this.inspectorArea.appendChild(this.inspectorOpener);
 
     // Define the data inspector
     this.inspector = document.createElement('div');
