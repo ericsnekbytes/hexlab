@@ -1434,7 +1434,7 @@ function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILay
     });
   }
 }
-
+// test 2
 /**
  * Initialization data for the hexlab extension.
  */
