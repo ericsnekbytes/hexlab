@@ -7,16 +7,20 @@ import {
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
+import { IFileBrowserFactory } from "@jupyterlab/filebrowser";
+
 import { INotebookShell } from '@jupyter-notebook/application';
 
 import {
   ICommandPalette,
-  WidgetTracker
+  WidgetTracker,
 } from '@jupyterlab/apputils';
 
 import { Signal } from '@lumino/signaling';
 
 import { Panel, Widget } from '@lumino/widgets';
+
+import { Buffer } from 'buffer';
 
 const DEBUG = true;
 
@@ -293,36 +297,74 @@ class HexManager {
     return actualRowsNeeded;
   }
 
-  async openFile(fileData: any) {
+  async openFile(fileData: any, fromLabBrowser: boolean) {
     console.log('[HexLab] ******** Opening File ********');
 
     this.clear();
 
-    // Attempt to get file contents
-    try {
-      let binRaw = await fileData.arrayBuffer();
-      let binData = new Uint8Array(binRaw);
+    // TODO restructure and clean up this if/else
+    if (fromLabBrowser) {  // Code for new Lab file browser context menu open
 
-      // Populate binary data members for this file
-      this.currentFilename = fileData.name;
-      if (this.currentFilename == null) {
-        // TODO check if this is needed
+      try {
+
+        // Stuff to get uint8aray from lab metadtaa
+        const base64String = fileData.content;
+        let binRaw = Buffer.from(base64String, 'base64')
+
+        // let binRaw = await fileData.arrayBuffer();
+        let binData = new Uint8Array(binRaw);
+
+        // Populate binary data members for this file
+        this.currentFilename = fileData.name;
+        if (this.currentFilename == null) {
+          // TODO check if this is needed
+          this.clear();
+          this.fileOpenFailure.emit(null);
+          return;
+        }
+        this.currentBlobData = binData;
+        this.currentFileSize = fileData.size;
+        console.log('[Hexlab] Filename: ' + this.currentFilename);
+        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+
+        console.log('[Hexlab] File opened successfully');
+        this.fileOpenSuccess.emit(null);
+      } catch (err) {
+        console.log('[Hexlab] Unkown error opening file');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;
       }
-      this.currentBlobData = binData;
-      this.currentFileSize = fileData.size;
-      console.log('[Hexlab] Filename: ' + this.currentFilename);
-      console.log('[Hexlab] File Size: ' + this.currentFileSize);
 
-      console.log('[Hexlab] File opened successfully');
-      this.fileOpenSuccess.emit(null);
-    } catch (err) {
-      console.log('[Hexlab] Unkown error opening file');
-      this.clear();
-      this.fileOpenFailure.emit(null);
-      return;
+    } else {  // This is the original browser picker code
+
+      // Attempt to get file contents
+      try {
+        let binRaw = await fileData.arrayBuffer();
+        let binData = new Uint8Array(binRaw);
+
+        // Populate binary data members for this file
+        this.currentFilename = fileData.name;
+        if (this.currentFilename == null) {
+          // TODO check if this is needed
+          this.clear();
+          this.fileOpenFailure.emit(null);
+          return;
+        }
+        this.currentBlobData = binData;
+        this.currentFileSize = fileData.size;
+        console.log('[Hexlab] Filename: ' + this.currentFilename);
+        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+
+        console.log('[Hexlab] File opened successfully');
+        this.fileOpenSuccess.emit(null);
+      } catch (err) {
+        console.log('[Hexlab] Unkown error opening file');
+        this.clear();
+        this.fileOpenFailure.emit(null);
+        return;
+      }
+
     }
   }
 }
@@ -468,6 +510,8 @@ class HexEditorWidget extends Widget {
 
   manager: HexManager;
 
+  app: any;  // TODO fix
+
   mainArea: HTMLElement;
   workspace: HTMLElement;
   topArea: HTMLElement;
@@ -515,12 +559,14 @@ class HexEditorWidget extends Widget {
   CELL_WIDTH = 24;  
   CELL_MARGIN = 2;
 
-  constructor() {
+  constructor(app: any) {
     super();
 
     this.manager = new HexManager();
     this.manager.fileOpenSuccess.connect(this.handleFileLoadSuccess.bind(this));
     this.manager.fileOpenFailure.connect(this.resetEditorState.bind(this));
+
+    this.app = app;
 
     // Add styling and build layout tree
     this.node.classList.add('hexlab_root_widget');
@@ -786,23 +832,40 @@ class HexEditorWidget extends Widget {
     this.currentByteLabel.innerText = 'Byte 0-Index: 0x0 (0)'
   }
 
-  async startFileLoad() {
+  async handleLabFileBrowserOpen(userFile: any, fileBrowser: any) {
+    console.log('YY3');
+    const fileData = await this.app.serviceManager.contents.get(
+      userFile.value.path,
+      { content: true, format: 'base64', type: 'base64' }
+    );
+    debugLog(`xFILE CONTs:\n${JSON.stringify(fileData)}`);
+    this.startFileLoad(fileData);
+  }
+
+  async startFileLoad(data: any) {
     console.log('[HexLab] ******** Handling File Selection Change ********');
 
-    // Obtain the file path
-    debugLog('[Hexlab] File list');
-    debugLog(this.openInputHidden.files);
+    let fromLabBrowser = false;
+
     let fileData: any = null;
-    if (this.openInputHidden.files.length > 0) {
-      fileData = this.openInputHidden.files[0];
+    if (data != null) {
+      fileData = data;
+      fromLabBrowser = true;
     } else {
-      console.log('[Hexlab] No file selected');
-      return;
+      // Obtain the file path
+      debugLog('[Hexlab] File list');
+      debugLog(this.openInputHidden.files);
+      if (this.openInputHidden.files.length > 0) {
+        fileData = this.openInputHidden.files[0];
+      } else {
+        console.log('[Hexlab] No file selected');
+        return;
+      }
     }
 
     // Clear displayed hex data, attempt file load
     this.clearLoadedFile();
-    this.manager.openFile(fileData);
+    this.manager.openFile(fileData, fromLabBrowser);
   }
 
   handleFileLoadSuccess() {
@@ -1394,7 +1457,9 @@ function activate(
     settingRegistry: ISettingRegistry | null,
     restorer: ILayoutRestorer | null,
     labshell: ILabShell | null,
-    nbshell: INotebookShell | null) {
+    nbshell: INotebookShell | null,
+    fileBrowserFactory: IFileBrowserFactory,
+  ) {
   console.log('[Hexlab] JupyterLab extension hexlab is activated!');
 
   if (settingRegistry) {
@@ -1417,7 +1482,7 @@ function activate(
     label: 'Hex Editor',
     execute: () => {
       if (!widget || widget.isDisposed) {
-        const content = new HexEditorWidget();
+        const content = new HexEditorWidget(app);
         widget = new Panel();
         widget.addWidget(content);
         widget.id = 'hexlab';
@@ -1441,9 +1506,42 @@ function activate(
       app.shell.activateById(widget.id);
     }
   });
-
+  // TODO fix this
   // Add the command to the palette.
   palette.addItem({ command, category: 'Tutorial' });
+
+  if (fileBrowserFactory) {
+    console.log('YY');
+    app.commands.addCommand('hexlab:labFileBrowserOpen', {
+    label: 'Open in hex editor',
+    caption: "Open the file in the hex editor (Hexlab)",
+    execute: async () => {
+        const fileModel: any = fileBrowserFactory.tracker.currentWidget
+          ?.selectedItems()
+          .next();
+        const file = fileModel.value;
+
+        if (file) {
+          console.log('YY2');
+          // TODO fix any/access
+          let hexWidget: HexEditorWidget | null = null;
+          for (const child of widget.children()) {
+            hexWidget = (child as any);
+            break;
+          }
+          if (hexWidget) {
+              await hexWidget.handleLabFileBrowserOpen(
+              fileModel,
+              fileBrowserFactory.tracker?.currentWidget
+            );
+          }
+        }
+      }
+    });
+
+    // Add the command to the palette.
+    palette.addItem({ 'command': "hexlab:labFileBrowserOpen", category: 'Tutorial' });
+  }
 
   // Track and restore the widget state
   let tracker = new WidgetTracker<Panel>({
@@ -1466,7 +1564,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
   description: 'A Hex editor for JupyterLab.',
   autoStart: true,
   requires: [ICommandPalette],
-  optional: [ISettingRegistry, ILayoutRestorer, ILabShell, INotebookShell as any],
+  optional: [ISettingRegistry, ILayoutRestorer, ILabShell, INotebookShell as any, IFileBrowserFactory],
   activate: activate
 };
 

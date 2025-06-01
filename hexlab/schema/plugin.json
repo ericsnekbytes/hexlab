@@ -4,5 +4,14 @@
   "description": "hexlab settings.",
   "type": "object",
   "properties": {},
-  "additionalProperties": false
+  "additionalProperties": false,
+  "jupyter.lab.menus": {
+    "context": [
+      {
+        "command": "hexlab:labFileBrowserOpen",
+        "selector": ".jp-DirListing-item",
+        "rank": 100
+      }
+    ]
+  }
 }
