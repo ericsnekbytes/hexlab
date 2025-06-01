@@ -1971,6 +1971,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jupyter-notebook/application@npm:^7.0.0":
+  version: 7.4.3
+  resolution: "@jupyter-notebook/application@npm:7.4.3"
+  dependencies:
+    "@jupyterlab/application": ~4.4.3
+    "@jupyterlab/coreutils": ~6.4.3
+    "@jupyterlab/docregistry": ~4.4.3
+    "@jupyterlab/rendermime-interfaces": ~3.12.3
+    "@jupyterlab/ui-components": ~4.4.3
+    "@lumino/algorithm": ^2.0.3
+    "@lumino/coreutils": ^2.2.1
+    "@lumino/messaging": ^2.0.3
+    "@lumino/polling": ^2.1.4
+    "@lumino/signaling": ^2.1.4
+    "@lumino/widgets": ^2.7.1
+  checksum: d55d63d1366876b6b2acce79b91f037ee190d50609a0d739b702de1ddcaa66afc633bb9f64e990e7ac6e1ab2a5732f35e44fb1e6bf44e4b555d988d2d38b676d
+  languageName: node
+  linkType: hard
+
 "@jupyter/react-components@npm:^0.16.6":
   version: 0.16.7
   resolution: "@jupyter/react-components@npm:0.16.7"
@@ -2007,7 +2026,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jupyterlab/application@npm:^4.0.0, @jupyterlab/application@npm:^4.4.3":
+"@jupyterlab/application@npm:^4.0.0, @jupyterlab/application@npm:^4.4.3, @jupyterlab/application@npm:~4.4.3":
   version: 4.4.3
   resolution: "@jupyterlab/application@npm:4.4.3"
   dependencies:
@@ -2035,7 +2054,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jupyterlab/apputils@npm:^4.5.3":
+"@jupyterlab/apputils@npm:^4.0.0, @jupyterlab/apputils@npm:^4.5.3":
   version: 4.5.3
   resolution: "@jupyterlab/apputils@npm:4.5.3"
   dependencies:
@@ -2221,7 +2240,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jupyterlab/coreutils@npm:^6.4.3":
+"@jupyterlab/coreutils@npm:^6.4.3, @jupyterlab/coreutils@npm:~6.4.3":
   version: 6.4.3
   resolution: "@jupyterlab/coreutils@npm:6.4.3"
   dependencies:
@@ -2260,7 +2279,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jupyterlab/docregistry@npm:^4.4.3":
+"@jupyterlab/docregistry@npm:^4.4.3, @jupyterlab/docregistry@npm:~4.4.3":
   version: 4.4.3
   resolution: "@jupyterlab/docregistry@npm:4.4.3"
   dependencies:
@@ -2438,7 +2457,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jupyterlab/rendermime-interfaces@npm:^3.12.3":
+"@jupyterlab/rendermime-interfaces@npm:^3.12.3, @jupyterlab/rendermime-interfaces@npm:~3.12.3":
   version: 3.12.3
   resolution: "@jupyterlab/rendermime-interfaces@npm:3.12.3"
   dependencies:
@@ -2607,7 +2626,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jupyterlab/ui-components@npm:^4.4.3":
+"@jupyterlab/ui-components@npm:^4.4.3, @jupyterlab/ui-components@npm:~4.4.3":
   version: 4.4.3
   resolution: "@jupyterlab/ui-components@npm:4.4.3"
   dependencies:
@@ -2926,7 +2945,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lumino/widgets@npm:^1.37.2 || ^2.7.1, @lumino/widgets@npm:^2.7.1":
+"@lumino/widgets@npm:^1.37.2 || ^2.7.1, @lumino/widgets@npm:^2.0.0, @lumino/widgets@npm:^2.7.1":
   version: 2.7.1
   resolution: "@lumino/widgets@npm:2.7.1"
   dependencies:
@@ -5708,10 +5727,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "hexlab@workspace:."
   dependencies:
+    "@jupyter-notebook/application": ^7.0.0
     "@jupyterlab/application": ^4.0.0
+    "@jupyterlab/apputils": ^4.0.0
     "@jupyterlab/builder": ^4.0.0
     "@jupyterlab/settingregistry": ^4.0.0
     "@jupyterlab/testutils": ^4.0.0
+    "@lumino/widgets": ^2.0.0
     "@types/jest": ^29.2.0
     "@types/json-schema": ^7.0.11
     "@types/react": ^18.0.26
