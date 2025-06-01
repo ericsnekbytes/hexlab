@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "hexlab",
+  "description": "hexlab settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}

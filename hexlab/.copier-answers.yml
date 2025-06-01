@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.3.8
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: ericsnekbytes@gmail.com
+author_name: Eric Gentry
+has_binder: false
+has_settings: true
+kind: frontend
+labextension_name: hexlab
+project_short_description: A Hex editor for JupyterLab.
+python_name: hexlab
+repository: https://github.com/ericsnekbytes/hexlab
+test: true
+
