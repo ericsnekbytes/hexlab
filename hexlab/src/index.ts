@@ -330,7 +330,8 @@ class HexManager {
         console.log('[Hexlab] File opened successfully');
         this.fileOpenSuccess.emit(null);
       } catch (err) {
-        console.log('[Hexlab] Unkown error opening file');
+        console.log(err);
+        console.log('[Hexlab] Unknown error opening file (read more above)');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;
@@ -1473,42 +1474,64 @@ function activate(
       });
   }
 
-  // Declare a widget variable
-  let widget: Panel;
+  // Widget/panel creator func
+  let makeWidget = () => {
+    // Make a container panel and widget
+    let panel = new Panel();
+    const widget = new HexEditorWidget(app);
+    panel.addWidget(widget);
+    panel.id = 'hexlab';
+    panel.title.label = 'Hex Editor';
+    panel.title.closable = true;
+    return {panel, widget};
+  }
+
+  let widgetData: {
+    panel: Panel,
+    widget: HexEditorWidget
+  };
 
   // Add an application command
   const command: string = 'hexlab:open';
   app.commands.addCommand(command, {
     label: 'Hex Editor',
     execute: () => {
-      if (!widget || widget.isDisposed) {
-        const content = new HexEditorWidget(app);
-        widget = new Panel();
-        widget.addWidget(content);
-        widget.id = 'hexlab';
-        widget.title.label = 'Hex Editor';
-        widget.title.closable = true;
-      }
-      if (!tracker.has(widget)) {
-        // Track the state of the widget for later restoration
-        tracker.add(widget);
-      }
-      if (!widget.isAttached) {
-        // Attach the widget to the main work area if it's not there
-        if (nbshell) {
-          app.shell.add(widget, 'right');
-        } else {
-          app.shell.add(widget, 'main');
-        }
-      }
 
-      // Activate the widget
+      widgetData = makeWidget();
+      let widget = widgetData.widget;
+      if (nbshell) {
+        app.shell.add(widgetData.panel, 'right');
+      } else {
+        app.shell.add(widgetData.panel, 'main');
+      }
       app.shell.activateById(widget.id);
+
+      // if (!widget || widget.isDisposed) {
+      //   const content = new HexEditorWidget(app);
+      //   widget = new Panel();
+      //   widget.addWidget(content);
+      //   widget.id = 'hexlab';
+      //   widget.title.label = 'Hex Editor';
+      //   widget.title.closable = true;
+      // }
+      // if (!tracker.has(widget)) {
+      //   // Track the state of the widget for later restoration
+      //   tracker.add(widget);
+      // }
+      // if (!widget.isAttached) {
+      //   // Attach the widget to the main work area if it's not there
+      //   if (nbshell) {
+      //     app.shell.add(widget, 'right');
+      //   } else {
+      //     app.shell.add(widget, 'main');
+      //   }
+      // }
+
+      // // Activate the widget
+      // app.shell.activateById(widget.id);
     }
   });
-  // TODO fix this
-  // Add the command to the palette.
-  palette.addItem({ command, category: 'Tutorial' });
+  palette.addItem({ command, category: 'hexlab' });
 
   if (fileBrowserFactory) {
     console.log('YY');
@@ -1524,17 +1547,25 @@ function activate(
         if (file) {
           console.log('YY2');
           // TODO fix any/access
-          let hexWidget: HexEditorWidget | null = null;
-          for (const child of widget.children()) {
-            hexWidget = (child as any);
-            break;
+          widgetData = makeWidget();
+          await widgetData.widget.handleLabFileBrowserOpen(
+            fileModel,
+            fileBrowserFactory.tracker?.currentWidget
+          );
+
+          if (nbshell) {
+            app.shell.add(widgetData.panel, 'right');
+          } else {
+            app.shell.add(widgetData.panel, 'main');
           }
-          if (hexWidget) {
-              await hexWidget.handleLabFileBrowserOpen(
-              fileModel,
-              fileBrowserFactory.tracker?.currentWidget
-            );
-          }
+          app.shell.activateById(widgetData.widget.id);
+
+          // if (hexWidget) {
+          //     await hexWidget.handleLabFileBrowserOpen(
+          //     fileModel,
+          //     fileBrowserFactory.tracker?.currentWidget
+          //   );
+          // }
         }
       }
     });
