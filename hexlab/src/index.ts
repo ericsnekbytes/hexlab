@@ -323,7 +323,7 @@ class HexManager {
           return;
         }
         this.currentBlobData = binData;
-        this.currentFileSize = fileData.size;
+        this.currentFileSize = binData.length;
         console.log('[Hexlab] Filename: ' + this.currentFilename);
         console.log('[Hexlab] File Size: ' + this.currentFileSize);
 
@@ -834,13 +834,47 @@ class HexEditorWidget extends Widget {
   }
 
   async handleLabFileBrowserOpen(userFile: any, fileBrowser: any) {
-    console.log('YY3');
     const fileData = await this.app.serviceManager.contents.get(
       userFile.value.path,
       { content: true, format: 'base64', type: 'base64' }
     );
-    debugLog(`xFILE CONTs:\n${JSON.stringify(fileData)}`);
-    this.startFileLoad(fileData);
+    // debugLog(`xFILE CONTs:\n${JSON.stringify(fileData)}`);
+
+// {
+//   "name": "notes1.rtf",
+//   "path": "notes1.rtf",
+//   "last_modified": "2022-05-02T15:34:46.162414Z",
+//   "created": "2024-07-29T17:41:10.512824Z",
+//   "content": FOO,
+//   "format": "base64",
+//   "mimetype": "application/rtf",
+//   "size": 466,
+//   "writable": true,
+//   "hash": null,
+//   "hash_algorithm": null,
+//   "type": "file",
+//   "serverPath": "notes1.rtf"
+// }
+
+    // const bodyWidget = new FssFileUploadContextPopup();
+    // this.uploadDialog = new Dialog({
+    //   body: bodyWidget,
+    //   title: 'Upload file'
+    // });
+
+    // const result = await this.uploadDialog.launch();
+
+    // if (result?.value) {
+    //   this.logger.debug('Filename provided', { filename: result.value });
+    //   return result;
+    // }
+
+    if (!('size' in fileData) && !('contents' in fileData)) {
+      console.log('[HexLab] Error, no file size or contents!');
+      return;
+    }
+
+    await this.startFileLoad(fileData);
   }
 
   async startFileLoad(data: any) {
@@ -908,6 +942,8 @@ class HexEditorWidget extends Widget {
     // Determines how many rows can fit in the hex area height
     let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
     let gridHeight: number = parseInt(gridHeightRaw);
+    console.log(`ROWSPERHEIGHT / ${gridHeightRaw} / ${gridHeight}`)
+    console.log(`** / ${JSON.stringify(window.getComputedStyle(this.workspace))}`)
 
     let maxRows = Math.floor(
       ((gridHeight) / (this.CELL_MARGIN + this.CELL_WIDTH))
@@ -1300,6 +1336,7 @@ class HexEditorWidget extends Widget {
     // give at least 1 row and 1 cell (which will clip in extreme cases).
     let maxCellCountClamped = this.manager.getMaxCellCountClamped();
     let maxRowCountClamped = this.manager.getMaxRowCountClamped();
+    console.log(`GRID POP Stats: ${maxCellCountClamped} // ${maxRowCountClamped}`);
 
     // Get the range of valid data indices that could fit on the page
     // for the given data position (note that we may not have enough
@@ -1534,7 +1571,6 @@ function activate(
   palette.addItem({ command, category: 'hexlab' });
 
   if (fileBrowserFactory) {
-    console.log('YY');
     app.commands.addCommand('hexlab:labFileBrowserOpen', {
     label: 'Open in hex editor',
     caption: "Open the file in the hex editor (Hexlab)",
@@ -1545,14 +1581,10 @@ function activate(
         const file = fileModel.value;
 
         if (file) {
-          console.log('YY2');
-          // TODO fix any/access
           widgetData = makeWidget();
-          await widgetData.widget.handleLabFileBrowserOpen(
-            fileModel,
-            fileBrowserFactory.tracker?.currentWidget
-          );
-
+          // Add widget to DOM before using it. The widget depends
+          // on being inside the DOM for page size calculations to work
+          // properly (otherwise we get invalid/unbounded row counts etc.)
           if (nbshell) {
             app.shell.add(widgetData.panel, 'right');
           } else {
@@ -1560,12 +1592,10 @@ function activate(
           }
           app.shell.activateById(widgetData.widget.id);
 
-          // if (hexWidget) {
-          //     await hexWidget.handleLabFileBrowserOpen(
-          //     fileModel,
-          //     fileBrowserFactory.tracker?.currentWidget
-          //   );
-          // }
+          await widgetData.widget.handleLabFileBrowserOpen(
+            fileModel,
+            fileBrowserFactory.tracker?.currentWidget
+          );
         }
       }
     });
