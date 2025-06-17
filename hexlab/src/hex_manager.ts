@@ -2,13 +2,7 @@ import { Signal } from '@lumino/signaling';
 
 import { Buffer } from 'buffer';
 
-const DEBUG = true;
-
-function debugLog(message: any) {
-  if (DEBUG) {
-    console.log(message);
-  }
-}
+import { Logger } from './logger'
 
 class HexManager {
 
@@ -73,11 +67,11 @@ class HexManager {
     let range = this.getFileByteRangeInclusive();
     let new_position = position;
     if (!(new_position >= range[0] && new_position <= range[1])) {
-      debugLog('[HexLab][MGR] Correcting out-of-bounds position ' + position);
+      Logger.debug('[HexLab][MGR] Correcting out-of-bounds position ' + position);
       new_position = this.clampPositionToValidByteIndices(new_position);
     }
     if (!this.isValidRowStartPosition(new_position)) {
-      debugLog('[HexLab][MGR] Correcting non-row-start position ' + position);
+      Logger.debug('[HexLab][MGR] Correcting non-row-start position ' + position);
       new_position = this.getClosestRowStartForPosition(this.position);
     }
     this.currentPosition = new_position;
@@ -235,18 +229,18 @@ class HexManager {
 
   dragCursor() {
     // On drag, move the cursor vertically
-    debugLog('[HexLab] ******** Drag Cursor ********');
+    Logger.debug('[HexLab] ******** Drag Cursor ********');
     let pageRange = this.getPageByteRangeInclusive();
     if (!(this._cursor >= pageRange[0] && this._cursor <= pageRange[1])) {
       let cursorRowStart = this.getClosestRowStartForPosition(this.cursor);
       let rowPosition = this._cursor - cursorRowStart;
-      debugLog('Page bRange' + pageRange);
-      debugLog('maxcellcount ' + this.getMaxCellCountClamped());
-      debugLog('last page rowstart ' + this.getClosestRowStartForPosition(pageRange[1]));
-      debugLog('---');
-      debugLog('cursor row start ' + cursorRowStart);
-      debugLog('row offset ' + rowPosition);
-      debugLog('---');
+      Logger.debug('Page bRange' + pageRange);
+      Logger.debug('maxcellcount ' + this.getMaxCellCountClamped());
+      Logger.debug('last page rowstart ' + this.getClosestRowStartForPosition(pageRange[1]));
+      Logger.debug('---');
+      Logger.debug('cursor row start ' + cursorRowStart);
+      Logger.debug('row offset ' + rowPosition);
+      Logger.debug('---');
 
       let closestPosTopRow = this.clampPositionToValidByteIndices(this.position + rowPosition);
       let closestPosBottomRow = this.clampPositionToValidByteIndices(
@@ -259,12 +253,12 @@ class HexManager {
       if (bottomDistance < topDistance) {
         newPosition = closestPosBottomRow;
       }
-      debugLog('ctop ' + closestPosTopRow);
-      debugLog('cbott ' + closestPosBottomRow);
-      debugLog('newpos ' + newPosition);
+      Logger.debug('ctop ' + closestPosTopRow);
+      Logger.debug('cbott ' + closestPosBottomRow);
+      Logger.debug('newpos ' + newPosition);
 
       this.cursor = newPosition;
-      debugLog('[HexLab] ****************');
+      Logger.debug('[HexLab] ****************');
     }
   }
 
@@ -278,7 +272,7 @@ class HexManager {
   }
 
   async openFile(fileData: any, fromLabBrowser: boolean) {
-    console.log('[HexLab] ******** Opening File ********');
+    Logger.debug('[HexLab] ******** Opening File ********');
 
     this.clear();
 
@@ -304,14 +298,14 @@ class HexManager {
         }
         this.currentBlobData = binData;
         this.currentFileSize = binData.length;
-        console.log('[Hexlab] Filename: ' + this.currentFilename);
-        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+        Logger.info('[Hexlab] Filename: ' + this.currentFilename);
+        Logger.info('[Hexlab] File Size: ' + this.currentFileSize);
 
-        console.log('[Hexlab] File opened successfully');
+        console.info('[Hexlab] File opened successfully');
         this.fileOpenSuccess.emit(null);
       } catch (err) {
-        console.log(err);
-        console.log('[Hexlab] Unknown error opening file (read more above)');
+        Logger.error(err);
+        Logger.error('[Hexlab] Unknown error opening file (read more above)');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;
@@ -334,13 +328,13 @@ class HexManager {
         }
         this.currentBlobData = binData;
         this.currentFileSize = fileData.size;
-        console.log('[Hexlab] Filename: ' + this.currentFilename);
-        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+        Logger.info('[Hexlab] Filename: ' + this.currentFilename);
+        Logger.info('[Hexlab] File Size: ' + this.currentFileSize);
 
-        console.log('[Hexlab] File opened successfully');
+        Logger.info('[Hexlab] File opened successfully');
         this.fileOpenSuccess.emit(null);
       } catch (err) {
-        console.log('[Hexlab] Unkown error opening file');
+        Logger.error('[Hexlab] Unkown error opening file');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;
