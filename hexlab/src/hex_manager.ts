@@ -272,7 +272,7 @@ class HexManager {
   }
 
   async openFile(fileData: any, fromLabBrowser: boolean) {
-    console.log('[HexLab] ******** Opening File ********');
+    Logger.debug('[HexLab] ******** Opening File ********');
 
     this.clear();
 
@@ -298,14 +298,14 @@ class HexManager {
         }
         this.currentBlobData = binData;
         this.currentFileSize = binData.length;
-        console.log('[Hexlab] Filename: ' + this.currentFilename);
-        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+        Logger.info('[Hexlab] Filename: ' + this.currentFilename);
+        Logger.info('[Hexlab] File Size: ' + this.currentFileSize);
 
-        console.log('[Hexlab] File opened successfully');
+        console.info('[Hexlab] File opened successfully');
         this.fileOpenSuccess.emit(null);
       } catch (err) {
-        console.log(err);
-        console.log('[Hexlab] Unknown error opening file (read more above)');
+        Logger.error(err);
+        Logger.error('[Hexlab] Unknown error opening file (read more above)');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;
@@ -328,13 +328,13 @@ class HexManager {
         }
         this.currentBlobData = binData;
         this.currentFileSize = fileData.size;
-        console.log('[Hexlab] Filename: ' + this.currentFilename);
-        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+        Logger.info('[Hexlab] Filename: ' + this.currentFilename);
+        Logger.info('[Hexlab] File Size: ' + this.currentFileSize);
 
-        console.log('[Hexlab] File opened successfully');
+        Logger.info('[Hexlab] File opened successfully');
         this.fileOpenSuccess.emit(null);
       } catch (err) {
-        console.log('[Hexlab] Unkown error opening file');
+        Logger.error('[Hexlab] Unkown error opening file');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;

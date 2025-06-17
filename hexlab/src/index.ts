@@ -421,7 +421,7 @@ class HexEditorWidget extends Widget {
   }
 
   handleScrollPageUp() {
-    console.log('[HexLab] Request page up');
+    Logger.debug('[HexLab] Request page up');
     let pageRowsMinusOne = Math.max(0, this.manager.getMaxRowCountClamped() - 1);
     this.manager.position = (
       this.manager.getClosestRowStartForPosition(
@@ -437,7 +437,7 @@ class HexEditorWidget extends Widget {
   }
 
   handleScrollPageDown() {
-    console.log('[HexLab] Request page down');
+    Logger.debug('[HexLab] Request page down');
     let pageRowsMinusOne = Math.max(0, this.manager.getMaxRowCountClamped() - 1);
     this.manager.position = (
       this.manager.getClosestRowStartForPosition(
@@ -521,7 +521,7 @@ class HexEditorWidget extends Widget {
     // }
 
     if (!('size' in fileData) && !('contents' in fileData)) {
-      console.log('[HexLab] Error, no file size or contents!');
+      Logger.error('[HexLab] Error, no file size or contents!');
       return;
     }
 
@@ -529,7 +529,7 @@ class HexEditorWidget extends Widget {
   }
 
   async startFileLoad(data: any) {
-    console.log('[HexLab] ******** Handling File Selection Change ********');
+    Logger.info('[HexLab] ******** Handling File Selection Change ********');
 
     let fromLabBrowser = false;
 
@@ -544,7 +544,7 @@ class HexEditorWidget extends Widget {
       if (this.openInputHidden.files.length > 0) {
         fileData = this.openInputHidden.files[0];
       } else {
-        console.log('[Hexlab] No file selected');
+        Logger.debug('[Hexlab] No file selected');
         return;
       }
     }
@@ -593,8 +593,8 @@ class HexEditorWidget extends Widget {
     // Determines how many rows can fit in the hex area height
     let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
     let gridHeight: number = parseInt(gridHeightRaw);
-    console.log(`ROWSPERHEIGHT / ${gridHeightRaw} / ${gridHeight}`)
-    console.log(`** / ${JSON.stringify(window.getComputedStyle(this.workspace))}`)
+    Logger.debug(`ROWSPERHEIGHT / ${gridHeightRaw} / ${gridHeight}`)
+    Logger.debug(`** / ${JSON.stringify(window.getComputedStyle(this.workspace))}`)
 
     let maxRows = Math.floor(
       ((gridHeight) / (this.CELL_MARGIN + this.CELL_WIDTH))
@@ -987,7 +987,7 @@ class HexEditorWidget extends Widget {
     // give at least 1 row and 1 cell (which will clip in extreme cases).
     let maxCellCountClamped = this.manager.getMaxCellCountClamped();
     let maxRowCountClamped = this.manager.getMaxRowCountClamped();
-    console.log(`GRID POP Stats: ${maxCellCountClamped} // ${maxRowCountClamped}`);
+    Logger.debug(`GRID POP Stats: ${maxCellCountClamped} // ${maxRowCountClamped}`);
 
     // Get the range of valid data indices that could fit on the page
     // for the given data position (note that we may not have enough
@@ -1149,13 +1149,13 @@ function activate(
     nbshell: INotebookShell | null,
     fileBrowserFactory: IFileBrowserFactory,
   ) {
-  console.log('[Hexlab] JupyterLab extension hexlab is activated!');
+  Logger.debug('[Hexlab] JupyterLab extension hexlab is activated!');
 
   if (settingRegistry) {
     settingRegistry
       .load(plugin.id)
       .then(settings => {
-        console.log('hexlab settings loaded:', settings.composite);
+        Logger.debug('hexlab settings loaded:', settings.composite);
       })
       .catch(reason => {
         console.error('Failed to load settings for hexlab.', reason);
