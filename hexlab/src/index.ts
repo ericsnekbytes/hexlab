@@ -1,5 +1,3 @@
-import { INotebookShell } from '@jupyter-notebook/application';
-
 import {
   ILayoutRestorer,
   ILabShell,
@@ -7,15 +5,22 @@ import {
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
 
+import { ISettingRegistry } from '@jupyterlab/settingregistry';
+
+import { IFileBrowserFactory } from "@jupyterlab/filebrowser";
+
+import { INotebookShell } from '@jupyter-notebook/application';
+
 import {
   ICommandPalette,
-  // MainAreaWidget,
-  WidgetTracker
+  WidgetTracker,
 } from '@jupyterlab/apputils';
 
 import { Signal } from '@lumino/signaling';
 
 import { Panel, Widget } from '@lumino/widgets';
+
+import { Buffer } from 'buffer';
 
 const DEBUG = true;
 
@@ -292,36 +297,75 @@ class HexManager {
     return actualRowsNeeded;
   }
 
-  async openFile(fileData: any) {
+  async openFile(fileData: any, fromLabBrowser: boolean) {
     console.log('[HexLab] ******** Opening File ********');
 
     this.clear();
 
-    // Attempt to get file contents
-    try {
-      let binRaw = await fileData.arrayBuffer();
-      let binData = new Uint8Array(binRaw);
+    // TODO restructure and clean up this if/else
+    if (fromLabBrowser) {  // Code for new Lab file browser context menu open
 
-      // Populate binary data members for this file
-      this.currentFilename = fileData.name;
-      if (this.currentFilename == null) {
-        // TODO check if this is needed
+      try {
+
+        // Stuff to get uint8aray from lab metadtaa
+        const base64String = fileData.content;
+        let binRaw = Buffer.from(base64String, 'base64')
+
+        // let binRaw = await fileData.arrayBuffer();
+        let binData = new Uint8Array(binRaw);
+
+        // Populate binary data members for this file
+        this.currentFilename = fileData.name;
+        if (this.currentFilename == null) {
+          // TODO check if this is needed
+          this.clear();
+          this.fileOpenFailure.emit(null);
+          return;
+        }
+        this.currentBlobData = binData;
+        this.currentFileSize = binData.length;
+        console.log('[Hexlab] Filename: ' + this.currentFilename);
+        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+
+        console.log('[Hexlab] File opened successfully');
+        this.fileOpenSuccess.emit(null);
+      } catch (err) {
+        console.log(err);
+        console.log('[Hexlab] Unknown error opening file (read more above)');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;
       }
-      this.currentBlobData = binData;
-      this.currentFileSize = fileData.size;
-      console.log('[Hexlab] Filename: ' + this.currentFilename);
-      console.log('[Hexlab] File Size: ' + this.currentFileSize);
 
-      console.log('[Hexlab] File opened successfully');
-      this.fileOpenSuccess.emit(null);
-    } catch (err) {
-      console.log('[Hexlab] Unkown error opening file');
-      this.clear();
-      this.fileOpenFailure.emit(null);
-      return;
+    } else {  // This is the original browser picker code
+
+      // Attempt to get file contents
+      try {
+        let binRaw = await fileData.arrayBuffer();
+        let binData = new Uint8Array(binRaw);
+
+        // Populate binary data members for this file
+        this.currentFilename = fileData.name;
+        if (this.currentFilename == null) {
+          // TODO check if this is needed
+          this.clear();
+          this.fileOpenFailure.emit(null);
+          return;
+        }
+        this.currentBlobData = binData;
+        this.currentFileSize = fileData.size;
+        console.log('[Hexlab] Filename: ' + this.currentFilename);
+        console.log('[Hexlab] File Size: ' + this.currentFileSize);
+
+        console.log('[Hexlab] File opened successfully');
+        this.fileOpenSuccess.emit(null);
+      } catch (err) {
+        console.log('[Hexlab] Unkown error opening file');
+        this.clear();
+        this.fileOpenFailure.emit(null);
+        return;
+      }
+
     }
   }
 }
@@ -467,6 +511,8 @@ class HexEditorWidget extends Widget {
 
   manager: HexManager;
 
+  app: any;  // TODO fix
+
   mainArea: HTMLElement;
   workspace: HTMLElement;
   topArea: HTMLElement;
@@ -514,12 +560,14 @@ class HexEditorWidget extends Widget {
   CELL_WIDTH = 24;  
   CELL_MARGIN = 2;
 
-  constructor() {
+  constructor(app: any) {
     super();
 
     this.manager = new HexManager();
     this.manager.fileOpenSuccess.connect(this.handleFileLoadSuccess.bind(this));
     this.manager.fileOpenFailure.connect(this.resetEditorState.bind(this));
+
+    this.app = app;
 
     // Add styling and build layout tree
     this.node.classList.add('hexlab_root_widget');
@@ -785,23 +833,74 @@ class HexEditorWidget extends Widget {
     this.currentByteLabel.innerText = 'Byte 0-Index: 0x0 (0)'
   }
 
-  async startFileLoad() {
+  async handleLabFileBrowserOpen(userFile: any, fileBrowser: any) {
+    const fileData = await this.app.serviceManager.contents.get(
+      userFile.value.path,
+      { content: true, format: 'base64', type: 'base64' }
+    );
+    // debugLog(`xFILE CONTs:\n${JSON.stringify(fileData)}`);
+
+// {
+//   "name": "notes1.rtf",
+//   "path": "notes1.rtf",
+//   "last_modified": "2022-05-02T15:34:46.162414Z",
+//   "created": "2024-07-29T17:41:10.512824Z",
+//   "content": FOO,
+//   "format": "base64",
+//   "mimetype": "application/rtf",
+//   "size": 466,
+//   "writable": true,
+//   "hash": null,
+//   "hash_algorithm": null,
+//   "type": "file",
+//   "serverPath": "notes1.rtf"
+// }
+
+    // const bodyWidget = new FssFileUploadContextPopup();
+    // this.uploadDialog = new Dialog({
+    //   body: bodyWidget,
+    //   title: 'Upload file'
+    // });
+
+    // const result = await this.uploadDialog.launch();
+
+    // if (result?.value) {
+    //   this.logger.debug('Filename provided', { filename: result.value });
+    //   return result;
+    // }
+
+    if (!('size' in fileData) && !('contents' in fileData)) {
+      console.log('[HexLab] Error, no file size or contents!');
+      return;
+    }
+
+    await this.startFileLoad(fileData);
+  }
+
+  async startFileLoad(data: any) {
     console.log('[HexLab] ******** Handling File Selection Change ********');
 
-    // Obtain the file path
-    debugLog('[Hexlab] File list');
-    debugLog(this.openInputHidden.files);
+    let fromLabBrowser = false;
+
     let fileData: any = null;
-    if (this.openInputHidden.files.length > 0) {
-      fileData = this.openInputHidden.files[0];
+    if (data != null) {
+      fileData = data;
+      fromLabBrowser = true;
     } else {
-      console.log('[Hexlab] No file selected');
-      return;
+      // Obtain the file path
+      debugLog('[Hexlab] File list');
+      debugLog(this.openInputHidden.files);
+      if (this.openInputHidden.files.length > 0) {
+        fileData = this.openInputHidden.files[0];
+      } else {
+        console.log('[Hexlab] No file selected');
+        return;
+      }
     }
 
     // Clear displayed hex data, attempt file load
     this.clearLoadedFile();
-    this.manager.openFile(fileData);
+    this.manager.openFile(fileData, fromLabBrowser);
   }
 
   handleFileLoadSuccess() {
@@ -843,6 +942,8 @@ class HexEditorWidget extends Widget {
     // Determines how many rows can fit in the hex area height
     let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
     let gridHeight: number = parseInt(gridHeightRaw);
+    console.log(`ROWSPERHEIGHT / ${gridHeightRaw} / ${gridHeight}`)
+    console.log(`** / ${JSON.stringify(window.getComputedStyle(this.workspace))}`)
 
     let maxRows = Math.floor(
       ((gridHeight) / (this.CELL_MARGIN + this.CELL_WIDTH))
@@ -1235,6 +1336,7 @@ class HexEditorWidget extends Widget {
     // give at least 1 row and 1 cell (which will clip in extreme cases).
     let maxCellCountClamped = this.manager.getMaxCellCountClamped();
     let maxRowCountClamped = this.manager.getMaxRowCountClamped();
+    console.log(`GRID POP Stats: ${maxCellCountClamped} // ${maxRowCountClamped}`);
 
     // Get the range of valid data indices that could fit on the page
     // for the given data position (note that we may not have enough
@@ -1379,49 +1481,128 @@ class HexEditorWidget extends Widget {
   }
 }
 
+
+  // requires: [ICommandPalette],
+  // optional: [ISettingRegistry, ILayoutRestorer, ILabShell, INotebookShell as any],
+
+
 /**
 * Activate the hexlab widget extension.
 */
-function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILayoutRestorer | null,
-                  labshell: ILabShell | null, nbshell: INotebookShell | null) {
+function activate(
+    app: JupyterFrontEnd,
+    palette: ICommandPalette,
+    settingRegistry: ISettingRegistry | null,
+    restorer: ILayoutRestorer | null,
+    labshell: ILabShell | null,
+    nbshell: INotebookShell | null,
+    fileBrowserFactory: IFileBrowserFactory,
+  ) {
   console.log('[Hexlab] JupyterLab extension hexlab is activated!');
 
-  // Declare a widget variable
-  let widget: Panel;
+  if (settingRegistry) {
+    settingRegistry
+      .load(plugin.id)
+      .then(settings => {
+        console.log('hexlab settings loaded:', settings.composite);
+      })
+      .catch(reason => {
+        console.error('Failed to load settings for hexlab.', reason);
+      });
+  }
+
+  // Widget/panel creator func
+  let makeWidget = () => {
+    // Make a container panel and widget
+    let panel = new Panel();
+    const widget = new HexEditorWidget(app);
+    panel.addWidget(widget);
+    panel.id = 'hexlab';
+    panel.title.label = 'Hex Editor';
+    panel.title.closable = true;
+    return {panel, widget};
+  }
+
+  let widgetData: {
+    panel: Panel,
+    widget: HexEditorWidget
+  };
 
   // Add an application command
   const command: string = 'hexlab:open';
   app.commands.addCommand(command, {
     label: 'Hex Editor',
     execute: () => {
-      if (!widget || widget.isDisposed) {
-        const content = new HexEditorWidget();
-        widget = new Panel();
-        widget.addWidget(content);
-        widget.id = 'hexlab';
-        widget.title.label = 'Hex Editor';
-        widget.title.closable = true;
-      }
-      if (!tracker.has(widget)) {
-        // Track the state of the widget for later restoration
-        tracker.add(widget);
-      }
-      if (!widget.isAttached) {
-        // Attach the widget to the main work area if it's not there
-        if (nbshell) {
-          app.shell.add(widget, 'right');
-        } else {
-          app.shell.add(widget, 'main');
-        }
-      }
 
-      // Activate the widget
+      widgetData = makeWidget();
+      let widget = widgetData.widget;
+      if (nbshell) {
+        app.shell.add(widgetData.panel, 'right');
+      } else {
+        app.shell.add(widgetData.panel, 'main');
+      }
       app.shell.activateById(widget.id);
+
+      // if (!widget || widget.isDisposed) {
+      //   const content = new HexEditorWidget(app);
+      //   widget = new Panel();
+      //   widget.addWidget(content);
+      //   widget.id = 'hexlab';
+      //   widget.title.label = 'Hex Editor';
+      //   widget.title.closable = true;
+      // }
+      // if (!tracker.has(widget)) {
+      //   // Track the state of the widget for later restoration
+      //   tracker.add(widget);
+      // }
+      // if (!widget.isAttached) {
+      //   // Attach the widget to the main work area if it's not there
+      //   if (nbshell) {
+      //     app.shell.add(widget, 'right');
+      //   } else {
+      //     app.shell.add(widget, 'main');
+      //   }
+      // }
+
+      // // Activate the widget
+      // app.shell.activateById(widget.id);
     }
   });
+  palette.addItem({ command, category: 'hexlab' });
 
-  // Add the command to the palette.
-  palette.addItem({ command, category: 'Tutorial' });
+  if (fileBrowserFactory) {
+    app.commands.addCommand('hexlab:labFileBrowserOpen', {
+    label: 'Open in hex editor',
+    caption: "Open the file in the hex editor (Hexlab)",
+    execute: async () => {
+        const fileModel: any = fileBrowserFactory.tracker.currentWidget
+          ?.selectedItems()
+          .next();
+        const file = fileModel.value;
+
+        if (file) {
+          widgetData = makeWidget();
+          // Add widget to DOM before using it. The widget depends
+          // on being inside the DOM for page size calculations to work
+          // properly (otherwise we get invalid/unbounded row counts etc.)
+          if (nbshell) {
+            app.shell.add(widgetData.panel, 'right');
+          } else {
+            app.shell.add(widgetData.panel, 'main');
+          }
+          app.shell.activateById(widgetData.widget.id);
+
+          await widgetData.widget.handleLabFileBrowserOpen(
+            fileModel,
+            fileBrowserFactory.tracker?.currentWidget
+          );
+        }
+      }
+    });
+
+    // Add the command to the palette.
+    palette.addItem({ 'command': "hexlab:labFileBrowserOpen", category: 'Tutorial' });
+  }
 
   // Track and restore the widget state
   let tracker = new WidgetTracker<Panel>({
@@ -1435,15 +1616,17 @@ function activate(app: JupyterFrontEnd, palette: ICommandPalette, restorer: ILay
   }
 }
 
+
 /**
  * Initialization data for the hexlab extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
   id: 'hexlab:plugin',
+  description: 'A Hex editor for JupyterLab.',
   autoStart: true,
   requires: [ICommandPalette],
-  optional: [ILayoutRestorer, ILabShell, INotebookShell as any],
-  activate: activate,
+  optional: [ISettingRegistry, ILayoutRestorer, ILabShell, INotebookShell as any, IFileBrowserFactory],
+  activate: activate
 };
 
 export default plugin;

@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "incremental": true,
     "jsx": "react",
+    "lib": ["DOM", "ES2020", "ES2020.Intl"],
     "module": "esnext",
     "moduleResolution": "node",
     "noEmitOnError": true,
@@ -18,11 +19,7 @@
     "strict": true,
     "strictNullChecks": true,
     "target": "ES2018",
-    "types": [],
-    "lib": [
-      "ESNext",
-      "DOM"
-    ]
+    "types": ["jest"]
   },
   "include": ["src/*"]
 }
