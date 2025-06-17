@@ -22,7 +22,7 @@ the [extension tutorial](https://jupyterlab.readthedocs.io/en/latest/extension/e
 - [X] Achieve compatibility with JupyterLab and Notebook 7
 - [ ] Basic editing
 - [ ] Data inspector/info panel
-- [X] Enable viewing from the built in Jupyter file browser panel
+- [X] Enable viewing from the built in Jupyter file browser panel (context menu)
 - [ ] View files larger than system memory
 - [ ] View remote files
 - [ ] Integrate with the MIME editor APIs
