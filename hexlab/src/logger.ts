@@ -9,26 +9,30 @@ export class Logger {
 
   static level = Logger.INFO;
 
-  static print(message: any, log_level: number) {
+  static _print(...messages: any) {
+    console.log(...messages);
+  }
+
+  static print(messages: any, log_level: number) {
     if (log_level && log_level <= Logger.level) {
-      console.log(message);
+      Logger._print(...messages);
     }
   }
 
-  static debug(message: any) {
-    Logger.print(message, Logger.DEBUG);
+  static debug(...messages: any) {
+    Logger.print(messages, Logger.DEBUG);
   }
 
-  static info(message: any) {
-    Logger.print(message, Logger.INFO);
+  static info(...messages: any) {
+    Logger.print(messages, Logger.INFO);
   }
 
-  static warn(message: any) {
-    Logger.print(message, Logger.WARN);
+  static warn(...messages: any) {
+    Logger.print(messages, Logger.WARN);
   }
 
-  static error(message: any) {
-    Logger.print(message, Logger.ERROR);
+  static error(...messages: any) {
+    Logger.print(messages, Logger.ERROR);
   }
 
   static setLevel(value: any) {
