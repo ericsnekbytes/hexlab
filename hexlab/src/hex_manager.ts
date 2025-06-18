@@ -271,7 +271,7 @@ class HexManager {
     return actualRowsNeeded;
   }
 
-  async openFile(fileData: any, fromLabBrowser: boolean) {
+  async openFile(fileData: any, fromLabBrowser=false) {
     Logger.debug('[HexLab] ******** Opening File ********');
 
     this.clear();
@@ -283,7 +283,7 @@ class HexManager {
 
         // Stuff to get uint8aray from lab metadtaa
         const base64String = fileData.content;
-        let binRaw = Buffer.from(base64String, 'base64')
+        let binRaw = Buffer.from(base64String, 'base64');
 
         // let binRaw = await fileData.arrayBuffer();
         let binData = new Uint8Array(binRaw);
@@ -334,7 +334,8 @@ class HexManager {
         Logger.info('[Hexlab] File opened successfully');
         this.fileOpenSuccess.emit(null);
       } catch (err) {
-        Logger.error('[Hexlab] Unkown error opening file');
+        Logger.error(err);
+        Logger.error('[Hexlab] Unkown error opening file (read more above)...');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;

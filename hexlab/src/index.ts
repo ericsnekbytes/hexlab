@@ -252,7 +252,7 @@ class HexEditorWidget extends Widget {
     this.openButton.classList.add('hexlab_open_button');
     this.openButton.innerText = 'Load File';
     this.openButton.addEventListener('click', this.triggerFileDialog.bind(this), {passive: true});
-    this.openInputHidden.addEventListener('input' , this.startFileLoad.bind(this), {passive: true});
+    this.openInputHidden.addEventListener('input' , this.handleBrowserPickerOpen.bind(this), {passive: true});
     this.fileControls.appendChild(this.openButton);
 
     // Add a button for clearing/unloading the current file
@@ -485,6 +485,7 @@ class HexEditorWidget extends Widget {
   }
 
   async handleLabFileBrowserOpen(userFile: any, fileBrowser: any) {
+    Logger.info('[HexLab] ******** Open from Jupyter integrated filebrowser ********');
     const fileData = await this.app.serviceManager.contents.get(
       userFile.value.path,
       { content: true, format: 'base64', type: 'base64' }
@@ -525,18 +526,19 @@ class HexEditorWidget extends Widget {
       return;
     }
 
-    await this.startFileLoad(fileData);
+    await this.startFileLoad(fileData, true);
   }
 
-  async startFileLoad(data: any) {
+  async handleBrowserPickerOpen() {
+    await this.startFileLoad();
+  }
+
+  async startFileLoad(data: any=null, fromLabBrowser=false) {
     Logger.info('[HexLab] ******** Handling File Selection Change ********');
 
-    let fromLabBrowser = false;
-
     let fileData: any = null;
-    if (data != null) {
+    if (data) {
       fileData = data;
-      fromLabBrowser = true;
     } else {
       // Obtain the file path
       Logger.debug('[Hexlab] File list');
@@ -548,6 +550,7 @@ class HexEditorWidget extends Widget {
         return;
       }
     }
+    Logger.debug('FDATA\n', fileData);
 
     // Clear displayed hex data, attempt file load
     this.clearLoadedFile();
@@ -594,7 +597,7 @@ class HexEditorWidget extends Widget {
     let gridHeightRaw: string = window.getComputedStyle(this.workspace).getPropertyValue('height');
     let gridHeight: number = parseInt(gridHeightRaw);
     Logger.debug(`ROWSPERHEIGHT / ${gridHeightRaw} / ${gridHeight}`)
-    Logger.debug(`** / ${JSON.stringify(window.getComputedStyle(this.workspace))}`)
+    // Logger.debug(`** / ${JSON.stringify(window.getComputedStyle(this.workspace))}`)
 
     let maxRows = Math.floor(
       ((gridHeight) / (this.CELL_MARGIN + this.CELL_WIDTH))
@@ -1149,13 +1152,14 @@ function activate(
     nbshell: INotebookShell | null,
     fileBrowserFactory: IFileBrowserFactory,
   ) {
-  Logger.debug('[Hexlab] JupyterLab extension hexlab is activated!');
+  Logger.setLevel(Logger.DEBUG)
+  Logger.info('[Hexlab] JupyterLab extension hexlab is activated!');
 
   if (settingRegistry) {
     settingRegistry
       .load(plugin.id)
       .then(settings => {
-        Logger.debug('hexlab settings loaded:', settings.composite);
+        console.log('hexlab settings loaded:', settings.composite);
       })
       .catch(reason => {
         console.error('Failed to load settings for hexlab.', reason);
