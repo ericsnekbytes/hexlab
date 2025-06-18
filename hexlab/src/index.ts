@@ -1256,7 +1256,7 @@ function activate(
     });
 
     // Add the command to the palette.
-    palette.addItem({ 'command': "hexlab:labFileBrowserOpen", category: 'Tutorial' });
+    palette.addItem({ 'command': "hexlab:labFileBrowserOpen", category: 'hexlab' });
   }
 
   // Track and restore the widget state

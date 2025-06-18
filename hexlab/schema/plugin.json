@@ -12,6 +12,21 @@
         "selector": ".jp-DirListing-item",
         "rank": 100
       }
+    ],
+    "main": [
+      {
+        "id": "hexlab:openWidget",
+        "items": [
+          {
+            "command": "hexlab:open",
+            "rank": 0
+          },
+          {
+            "type": "separator",
+            "rank": 1
+          }
+        ]
+      }
     ]
   }
 }
