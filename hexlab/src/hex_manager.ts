@@ -334,7 +334,8 @@ class HexManager {
         Logger.info('[Hexlab] File opened successfully');
         this.fileOpenSuccess.emit(null);
       } catch (err) {
-        Logger.error('[Hexlab] Unkown error opening file');
+        Logger.error(err);
+        Logger.error('[Hexlab] Unkown error opening file (read more above)...');
         this.clear();
         this.fileOpenFailure.emit(null);
         return;

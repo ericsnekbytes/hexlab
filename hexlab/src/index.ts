@@ -252,7 +252,7 @@ class HexEditorWidget extends Widget {
     this.openButton.classList.add('hexlab_open_button');
     this.openButton.innerText = 'Load File';
     this.openButton.addEventListener('click', this.triggerFileDialog.bind(this), {passive: true});
-    this.openInputHidden.addEventListener('input' , this.startFileLoad.bind(this), {passive: true});
+    this.openInputHidden.addEventListener('input' , this.handleBrowserPickerOpen.bind(this), {passive: true});
     this.fileControls.appendChild(this.openButton);
 
     // Add a button for clearing/unloading the current file
@@ -529,11 +529,15 @@ class HexEditorWidget extends Widget {
     await this.startFileLoad(fileData, true);
   }
 
-  async startFileLoad(data: any, fromLabBrowser=false) {
+  async handleBrowserPickerOpen() {
+    await this.startFileLoad();
+  }
+
+  async startFileLoad(data: any=null, fromLabBrowser=false) {
     Logger.info('[HexLab] ******** Handling File Selection Change ********');
 
     let fileData: any = null;
-    if (data != null) {
+    if (data) {
       fileData = data;
     } else {
       // Obtain the file path
@@ -546,6 +550,7 @@ class HexEditorWidget extends Widget {
         return;
       }
     }
+    Logger.debug('FDATA\n', fileData);
 
     // Clear displayed hex data, attempt file load
     this.clearLoadedFile();
@@ -1148,8 +1153,7 @@ function activate(
     fileBrowserFactory: IFileBrowserFactory,
   ) {
   Logger.setLevel(Logger.DEBUG)
-  Logger.info('[Hexlab]zz JupyterLab extension hexlab is activated!');
-  Logger._print('abc', {'foo': 'bar'}, 77);
+  Logger.info('[Hexlab] JupyterLab extension hexlab is activated!');
 
   if (settingRegistry) {
     settingRegistry
